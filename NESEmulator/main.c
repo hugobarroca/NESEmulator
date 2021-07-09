@@ -9,6 +9,8 @@ int main(int argc, char *argv[]){
         if(commandInteger == 1){
             printf("Exiting program!\n");
             return 0;
+        }else{
+            printf("Command not recognized.");
         }
     }
 
