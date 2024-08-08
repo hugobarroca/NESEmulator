@@ -1,5 +1,10 @@
 #include <stdio.h>
 
+void loadGame(){
+	FILE *file = fopen("example.txt", "r");
+	fclose(file);
+}
+
 int welcomeScreen(){	
 	int commandInteger;
 	char c;
@@ -14,7 +19,10 @@ int welcomeScreen(){
 			return 0;
 		}
 		if(c == '1'){
-			printf("This functionality has not yet been implemented.\n");
+			printf("Please choose the file to load.\n");
+			char gameName[50]; 
+			fgets(gameName, sizeof(gameName), stdin);
+			loadGame(gameName);
 			continue;
 		}
 		printf("Command not recognized.\n\n");
