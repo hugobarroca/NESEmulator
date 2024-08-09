@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 void loadGame(){
-	FILE *file = fopen("example.txt", "r");
+	FILE *file = fopen("", "r");
 	fclose(file);
 }
 
@@ -20,10 +20,12 @@ int welcomeScreen(){
 		}
 		if(c == '1'){
 			printf("Please choose the file to load.\n");
+			getchar();
 			char gameName[50]; 
 			fgets(gameName, sizeof(gameName), stdin);
-			loadGame(gameName);
-			continue;
+			printf("The game you selected was: %s\n", gameName);
+			printf("Emulator functionality to be developed.\n");
+			return 0;
 		}
 		printf("Command not recognized.\n\n");
 	}
