@@ -1,5 +1,10 @@
 #include <stdio.h>
 
+void resetInputBuffer(){
+	int c;
+	while(( c = getchar()) != '\n' && c != EOF);
+}
+
 void loadGame(){
 	FILE *file = fopen("", "r");
 	fclose(file);
@@ -19,11 +24,11 @@ int welcomeScreen(){
 			return 0;
 		}
 		if(c == '1'){
-			printf("Please choose the file to load.\n");
-			getchar();
-			char gameName[50]; 
+			printf("Please type the name of the game you wish to load.\n");
+			char gameName[50];
+			resetInputBuffer();
 			fgets(gameName, sizeof(gameName), stdin);
-			printf("The game you selected was: %s\n", gameName);
+			printf("The game you selected was: %s", gameName);
 			printf("Emulator functionality to be developed.\n");
 			return 0;
 		}
