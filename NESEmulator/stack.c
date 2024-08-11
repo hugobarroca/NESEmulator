@@ -1,20 +1,16 @@
 #include <stdio.h>
+#include "stack.h"
 
-struct Stack{
-	int stack[64];
-	int* stackPointer;
-};
-
-void initStack(struct Stack *s){
+void initStack(Stack *s){
 	s->stackPointer = s->stack - 1;
 }
 
-void pushStack(struct Stack *s, int value){
+void pushStack(Stack *s, int value){
 	s->stackPointer++;
 	*(s->stackPointer) = value;
 }
 
-int popStack(struct Stack *s){
+int popStack(Stack *s){
 	if(s->stackPointer < s->stack)
 	{
 		printf("ERROR: Stack underflow detected!\n");

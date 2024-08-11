@@ -1,13 +1,13 @@
 #ifndef STACK_H
 #define STACK_H
 
-struct Stack{
+typedef struct {
 	int stack[64];
 	int* stackPointer;
-};
+} Stack;
 
-void initStack(struct Stack *s);
-void pushStack(struct Stack *s, int value);
-int popStack(struct Stack *s);
+void initStack(Stack *s);
+void pushStack(Stack *s, int value);
+int popStack(Stack *s);
 
 #endif
