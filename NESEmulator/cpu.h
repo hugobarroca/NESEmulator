@@ -7,5 +7,5 @@ typedef struct {
 	uint8_t P;
 	uint8_t S;
 	uint16_t PC;
-	uint8_t stack[256];
+	uint8_t Memory[65536];
 } CPU;
