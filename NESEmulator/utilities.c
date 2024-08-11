@@ -1,6 +1,6 @@
 // This file is meant to hold utility functions
-#include "utilities.h"
 #include <stdio.h>
+#include "utilities.h"
 
 void resetInputBuffer(){
 	int c;

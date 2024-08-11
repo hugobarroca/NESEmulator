@@ -2,6 +2,8 @@
 #include <stdbool.h>
 
 void runProcessor(){
+	int programCounter[2];
+
 	while(true){
 		//fetch instruction from memory
 		//execute instruction
