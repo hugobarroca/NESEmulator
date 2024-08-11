@@ -46,7 +46,7 @@ uint8_t readBus(CPU *cpu, uint16_t address){
 void orAImmediate(CPU *cpu){
 	uint8_t immediateValue = readBus(cpu, cpu->PC);
 	cpu->PC++;
-	cpu->A = cpu->A || immediateValue;
+	cpu->A = cpu->A | immediateValue;
 }
 
 void executeInstruction(CPU *cpu){
