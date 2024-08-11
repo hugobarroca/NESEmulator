@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 typedef struct {
 	uint8_t A;
 	uint8_t X;
