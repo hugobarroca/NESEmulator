@@ -1,9 +1,5 @@
 #include <stdio.h>
-
-void resetInputBuffer(){
-	int c;
-	while(( c = getchar()) != '\n' && c != EOF);
-}
+#include "utilities.h"
 
 void loadGame(){
 	FILE *file = fopen("", "r");
