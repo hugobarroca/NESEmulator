@@ -10,7 +10,7 @@ void initProcessor(CPU *cpu){
 	cpu->X = 0;
 	cpu->Y = 0;
 	cpu->P = 0;
-	cpu->S = 0;
+	cpu->S = 0xFF;
 	cpu->PC = 0;
 	for(int i = 0; i < 256; i++){
 		cpu->stack[i] = 0;
@@ -18,14 +18,20 @@ void initProcessor(CPU *cpu){
 }
 
 void pushStack(CPU *cpu, uint8_t value){
+	if(cpu->S < 0x00){
+		printf("ERROR; Stack overflow detected!");
+	}
 	cpu->stack[cpu->S] = value;
-	cpu->S++;	
+	cpu->S--;	
 }
 
 
 uint8_t popStack(CPU *cpu){
-	cpu->S--;
-	return cpu->stack[cpu->S + 1];
+	if(cpu->S == 0xFF){
+		printf("ERROR: Stack underflow detected!");
+	}
+	cpu->S++;
+	return cpu->stack[cpu->S - 1];
 }
 
 uint8_t readBus(CPU *cpu, uint16_t address){
