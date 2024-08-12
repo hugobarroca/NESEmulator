@@ -48,36 +48,32 @@ uint8_t readBus(CPU *cpu, uint16_t address){
 }
 
 void orAImmediate(CPU *cpu){
-	uint8_t immediateValue = readBus(cpu, cpu->PC);
+	uint8_t pcAddr = readBus(cpu, cpu->PC);
+	uint8_t immediateValue = readBus(cpu, pcAddr);
 	cpu->PC++;
 	cpu->A = cpu->A | immediateValue;
 }
 
 void orAZeroPage(CPU *cpu){
-	uint8_t address = readBus(cpu, cpu->PC);
+	uint8_t pcAddr = readBus(cpu, cpu->PC);
+	uint8_t address = readBus(cpu, pcAddr);
 	cpu->PC++;
 	cpu->A = cpu->A | readBus(cpu, (uint16_t)address);
 }
 
 void orAZeroPageX(CPU *cpu){
-	// Get address at PC value
 	uint8_t pcAddr =  readBus(cpu, cpu->PC);
-	// Get memory address from where PC was pointing
 	uint8_t pcValue = readBus(cpu, pcAddr);
 	cpu->PC++;
-	// Add the value of the X register to it.
 	uint8_t address = pcValue + cpu->X;
-	// Read the value in that memory address
 	uint8_t memValue = readBus(cpu, address);
-	// Or that value with the contents of the Accumulator, and set it 
 	cpu->A = cpu->A | memValue;
 }
 
 void executeInstruction(CPU *cpu){
-	//Read instruction from the program counter
-	uint8_t instruction = readBus(cpu, cpu->PC);
+	uint8_t prAddr = readBus(cpu, cpu->PC);
+	uint8_t instruction = readBus(cpu, prAddr);
 	cpu->PC++;
-	 
 	switch (instruction){
 		case(0x09):
 			orAImmediate(cpu);
