@@ -65,7 +65,18 @@ void orAZeroPageX(CPU *cpu){
 	uint8_t pcAddr =  readBus(cpu, cpu->PC);
 	uint8_t pcValue = readBus(cpu, pcAddr);
 	cpu->PC++;
-	uint8_t address = pcValue + cpu->X;
+	uint16_t address = (uint16_t)pcValue + cpu->X;
+	uint8_t memValue = readBus(cpu, address);
+	cpu->A = cpu->A | memValue;
+}
+
+void orAAbsolute(CPU *cpu){
+	uint8_t pcAddr =  readBus(cpu, cpu->PC);
+	uint8_t addr1 = readBus(cpu, pcAddr);
+	cpu->PC++;
+	uint8_t addr2 = readBus(cpu, pcAddr);
+	cpu->PC++;
+	uint16_t address = (uint16_t)addr1 << 8 | addr2;
 	uint8_t memValue = readBus(cpu, address);
 	cpu->A = cpu->A | memValue;
 }
