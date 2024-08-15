@@ -17,6 +17,21 @@ void initProcessor(CPU *cpu){
 	}
 }
 
+void loadGame(char fileName[]){
+	FILE *file = fopen(fileName, "rb");
+	printf("Opened the file successfully.\n");
+	if(file == NULL){
+		printf("Not able to open the file.\n");
+		return;
+	}
+	
+	char buffer[15]; 
+	while(fgets(buffer, 15, file)){
+		printf(buffer);	
+	}
+	fclose(file);
+}
+
 void pushStack(CPU *cpu, uint8_t value){
 	if(cpu->S < 0x00){
 		printf("ERROR; Stack overflow detected!");

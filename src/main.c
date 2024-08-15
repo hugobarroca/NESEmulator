@@ -1,10 +1,6 @@
 #include <stdio.h>
+#include "cpu.h"
 #include "utilities.h"
-
-void loadGame(){
-	FILE *file = fopen("", "r");
-	fclose(file);
-}
 
 int welcomeScreen(){	
 	int commandInteger;
@@ -25,6 +21,7 @@ int welcomeScreen(){
 			resetInputBuffer();
 			fgets(gameName, sizeof(gameName), stdin);
 			printf("The game you selected was: %s", gameName);
+			loadGame(gameName);
 			printf("Emulator functionality to be developed.\n");
 			return 0;
 		}

@@ -9,3 +9,5 @@ typedef struct {
 	uint16_t PC;
 	uint8_t Memory[65536];
 } CPU;
+
+void loadGame(char fileName[]);
