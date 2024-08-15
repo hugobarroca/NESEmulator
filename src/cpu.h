@@ -10,4 +10,4 @@ typedef struct {
 	uint8_t Memory[65536];
 } CPU;
 
-void loadGame(char fileName[]);
+void loadGame(CPU *cpu, char fileName[]);

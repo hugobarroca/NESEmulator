@@ -17,18 +17,14 @@ void initProcessor(CPU *cpu){
 	}
 }
 
-void loadGame(char fileName[]){
+void loadGame(CPU *cpu, char fileName[]){
 	FILE *file = fopen(fileName, "rb");
-	printf("Opened the file successfully.\n");
 	if(file == NULL){
-		printf("Not able to open the file.\n");
+		printf("File not found.\n");
 		return;
 	}
-	
-	char buffer[15]; 
-	while(fgets(buffer, 15, file)){
-		printf(buffer);	
-	}
+	printf("Opened the file successfully.\n");
+	//While loop to read from file into CPU memory	
 	fclose(file);
 }
 

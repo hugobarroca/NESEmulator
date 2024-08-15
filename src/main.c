@@ -5,6 +5,7 @@
 int welcomeScreen(){	
 	int commandInteger;
 	char c;
+	CPU cpu;
 
 	for(;;){
 		printf("Welcome to NESEmulator! Please select an option:\n");
@@ -21,7 +22,7 @@ int welcomeScreen(){
 			resetInputBuffer();
 			fgets(gameName, sizeof(gameName), stdin);
 			printf("The game you selected was: %s", gameName);
-			loadGame(gameName);
+			loadGame(&cpu, gameName);
 			printf("Emulator functionality to be developed.\n");
 			return 0;
 		}
