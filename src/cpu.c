@@ -1,4 +1,5 @@
 // This file is meant to hold all the necessary code to emulate the Ricoh 2A03 CPU (based on the 6502 CPU).
+#include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include "cpu.h"
@@ -18,19 +19,25 @@ void initProcessor(CPU *cpu){
 }
 
 void loadGame(CPU *cpu, char fileName[]){
+	printf("Attempting to load game: %s\n", fileName);
 	FILE *file = fopen(fileName, "rb");
 	if(file == NULL){
 		printf("File not found.\n");
 		return;
 	}
 	printf("Opened the file successfully.\n");
-	//While loop to read from file into CPU memory	
+	// While loop to read from file into memory
+	uint8_t *gameStart = (cpu->Memory + 0x8000);
+	printf("Game start address: %#08x\n", gameStart);
+	//fread(gameStart);
+	
+	// Read the game header and initialize CPU accordingly
 	fclose(file);
 }
 
 void pushStack(CPU *cpu, uint8_t value){
 	if(cpu->S < 0x00){
-		printf("ERROR; Stack overflow detected!");
+		printf("ERROR; Stack overflow detected!\n");
 	}
 	cpu->Memory[cpu->S + 0x0100] = value;
 	cpu->S--;	
@@ -45,6 +52,7 @@ uint8_t popStack(CPU *cpu){
 	return cpu->Memory[(cpu->S - 1) + 0x0100];
 }
 
+// The BUS in the NES had special addresses for different things
 uint8_t readBus(CPU *cpu, uint16_t address){
 	// Get it from zero-page memory.
 	if(address >= 0x00 && address <= 0x00FF){

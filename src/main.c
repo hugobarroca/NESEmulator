@@ -1,3 +1,4 @@
+#include <string.h>
 #include <stdio.h>
 #include "cpu.h"
 #include "utilities.h"
@@ -18,10 +19,14 @@ int welcomeScreen(){
 		}
 		if(c == '1'){
 			printf("Please type the name of the game you wish to load.\n");
-			char gameName[50];
+			char gameName[250];
 			resetInputBuffer();
 			fgets(gameName, sizeof(gameName), stdin);
-			printf("The game you selected was: %s", gameName);
+			char *p = strchr(gameName, '\n');
+			if(p != NULL){
+				*p = '\0';	
+			}
+			printf("The game you selected was: %s\n", gameName);
 			loadGame(&cpu, gameName);
 			printf("Emulator functionality to be developed.\n");
 			return 0;
