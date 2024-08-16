@@ -18,6 +18,24 @@ void initProcessor(CPU *cpu){
 	}
 }
 
+void readGameHeaders(CPU *cpu)
+{
+	uint8_t *nes = cpu->Memory;	
+	
+	printf("HEADER START: %.3s\n", nes);
+	printf("PRG ROM Size: %d KBs.\n", cpu->Memory[4] * 16);	
+	printf("CHR ROM Size: %d KBs.\n", cpu->Memory[5] * 16);	
+	printf("Flags 6: %#08x\n", cpu->Memory[6] * 16);	
+	printf("Flags 7: %#08x\n", cpu->Memory[7] * 16);	
+	printf("Flags 8: %#08x\n", cpu->Memory[8] * 16);	
+	printf("Flags 9: %#08x\n", cpu->Memory[9] * 16);	
+	printf("Flags 10: %#08x\n", cpu->Memory[10] * 16);	
+	
+	uint8_t *ripper = cpu->Memory + 11;	
+	printf("RIPPER NAME: %.5s\n", ripper);
+		
+}
+
 void loadGame(CPU *cpu, char fileName[]){
 	printf("Attempting to load game: %s\n", fileName);
 	FILE *file = fopen(fileName, "rb");
@@ -38,6 +56,7 @@ void loadGame(CPU *cpu, char fileName[]){
 	printf("Read file successfully!\n");
 
 	// Read the game header and initialize CPU accordingly
+	readGameHeaders(cpu);
 	fclose(file);
 }
 
