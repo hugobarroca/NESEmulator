@@ -13,7 +13,7 @@ void initProcessor(CPU *cpu){
 	cpu->PC = 0;
 
 	// The stack lives in addresses 0x0100 to 0x01FF
-	for(int i = 0x0100; i < 0x1FF; i++){
+	for(int i = 0x0100; i < 0x01FF; i++){
 		cpu->Memory[i] = 0;
 	}
 }
@@ -26,11 +26,17 @@ void loadGame(CPU *cpu, char fileName[]){
 		return;
 	}
 	printf("Opened the file successfully.\n");
-	// While loop to read from file into memory
-	uint8_t *gameStart = (cpu->Memory + 0x8000);
+	uint8_t *gameStart = (cpu->Memory);
 	printf("Game start address: %#08x\n", gameStart);
-	//fread(gameStart);
 	
+	fseek(file, 0, SEEK_END);
+	long fileSize = ftell(file);
+	fseek(file, 0, SEEK_SET);
+
+	printf("Filesize: %u bytes\n", fileSize);
+	fread(gameStart, 1, (fileSize / 8), file);
+	printf("Read file successfully!\n");
+
 	// Read the game header and initialize CPU accordingly
 	fclose(file);
 }
