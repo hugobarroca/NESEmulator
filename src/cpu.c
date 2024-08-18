@@ -10,7 +10,7 @@ void initProcessor(CPU *cpu){
 	cpu->Y = 0;
 	cpu->P = 0;
 	cpu->S = 0xFF;
-	cpu->PC = 0;
+	cpu->PC = 0xFFFC;
 
 	// The stack lives in addresses 0x0100 to 0x01FF
 	for(int i = 0x0100; i < 0x01FF; i++){
@@ -33,7 +33,6 @@ void readGameHeaders(CPU *cpu)
 	
 	uint8_t *ripper = cpu->Memory + 11;	
 	printf("RIPPER NAME: %.5s\n", ripper);
-		
 }
 
 void loadGame(CPU *cpu, char fileName[]){
