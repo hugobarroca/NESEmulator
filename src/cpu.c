@@ -35,29 +35,6 @@ void readGameHeaders(CPU *cpu)
 	printf("RIPPER NAME: %.5s\n", ripper);
 }
 
-void loadGame(CPU *cpu, char fileName[]){
-	printf("Attempting to load game: %s\n", fileName);
-	FILE *file = fopen(fileName, "rb");
-	if(file == NULL){
-		printf("File not found.\n");
-		return;
-	}
-	printf("Opened the file successfully.\n");
-	uint8_t *gameStart = (cpu->Memory);
-	printf("Game start address: %#08x\n", gameStart);
-	
-	fseek(file, 0, SEEK_END);
-	long fileSize = ftell(file);
-	fseek(file, 0, SEEK_SET);
-
-	printf("Filesize: %u bytes\n", fileSize);
-	fread(gameStart, 1, (fileSize / 8), file);
-	printf("Read file successfully!\n");
-
-	// Read the game header and initialize CPU accordingly
-	readGameHeaders(cpu);
-	fclose(file);
-}
 
 void pushStack(CPU *cpu, uint8_t value){
 	if(cpu->S < 0x00){
@@ -86,11 +63,14 @@ uint8_t readBus(CPU *cpu, uint16_t address){
 	if(address >= 0x0100 && address <= 0x01FF){
 		return popStack(cpu);
 	}
-	printf("Invalid bus address was accessed!");
+
+	return cpu->Memory[address];
+	printf("Invalid bus address was accessed!\n");
 	return -1;
 }
 
 void orAImmediate(CPU *cpu){
+	printf("Executing orAImmediate instruction.");
 	uint8_t pcAddr = readBus(cpu, cpu->PC);
 	uint8_t immediateValue = readBus(cpu, pcAddr);
 	cpu->PC++;
@@ -156,5 +136,36 @@ void executeInstruction(CPU *cpu){
 		default:
 			break;
 	}
+}
+
+void execute(CPU *cpu){
+	executeInstruction(cpu);
+	printf("Finished executing instrunction. Press any character to continue.\n");
+	getchar();
+}
+
+void loadGame(CPU *cpu, char fileName[]){
+	printf("Attempting to load game: %s\n", fileName);
+	FILE *file = fopen(fileName, "rb");
+	if(file == NULL){
+		printf("File not found.\n");
+		return;
+	}
+	printf("Opened the file successfully.\n");
+	uint8_t *gameStart = (cpu->Memory);
+	printf("Game start address: %#08x\n", gameStart);
+	
+	fseek(file, 0, SEEK_END);
+	long fileSize = ftell(file);
+	fseek(file, 0, SEEK_SET);
+
+	printf("Filesize: %u bytes\n", fileSize);
+	fread(gameStart, 1, (fileSize / 8), file);
+	printf("Read file successfully!\n");
+
+	// Read the game header and initialize CPU accordingly
+	readGameHeaders(cpu);
+	execute(cpu);
+	fclose(file);
 }
 
