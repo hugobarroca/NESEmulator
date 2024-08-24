@@ -104,6 +104,21 @@ void orAAbsolute(CPU *cpu){
 	cpu->A = cpu->A | memValue;
 }
 
+void orAAbsoluteX(CPU *cpu){
+	uint8_t pcAddr =  readBus(cpu, cpu->PC);
+	uint8_t addr1 = readBus(cpu, pcAddr);
+	cpu->PC++;
+	uint8_t addr2 = readBus(cpu, pcAddr);
+	cpu->PC++;
+	uint16_t address = (uint16_t)addr1 << 8 | addr2;
+	// Get the value of the offset from the X register
+	uint8_t offset = readBus(cpu, cpu->X);
+	// Add it to the memory address value
+	uint16_t finalAddr = address + offset;
+	uint8_t memValue = readBus(cpu, finalAddr);
+	cpu->A = cpu->A | memValue;
+}
+
 void executeInstruction(CPU *cpu){
 	uint8_t prAddr = readBus(cpu, cpu->PC);
 	uint8_t instruction = readBus(cpu, prAddr);
@@ -119,10 +134,10 @@ void executeInstruction(CPU *cpu){
 			orAZeroPageX(cpu);
 			break;
 		case(0x0D):
-			// orAAbsolute(cpu);
+			orAAbsolute(cpu);
 			break;
 		case(0x1D):
-			// orAAbsoluteX(cpu);
+			orAAbsoluteX(cpu);
 			break;
 		case(0x19):
 			// orAbsoluteY(cpu);
