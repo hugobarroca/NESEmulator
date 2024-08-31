@@ -130,7 +130,7 @@ void executeInstruction(CPU *cpu) {
     orAZeroPage(cpu);
     break;
   case (0x06):
-    // shiftLeftOneBitZeroPage(cpu);
+    // arithmeticShiftLeftZeroPage(cpu);
     break;
   case (0x08):
     // pushProcessorStatusOnStack(cpu);
@@ -139,16 +139,16 @@ void executeInstruction(CPU *cpu) {
     orAImmediate(cpu);
     break;
   case (0x0A):
-    // shiftLeftOneBitAccumulator(cpu);
+    // arithmeticShiftLeftAccumulator(cpu);
     break;
   case (0x0D):
     orAAbsolute(cpu);
     break;
   case (0x0E):
-    // shiftLeftOneBitAbsolute(cpu);
+    // arithmeticShiftLeftAbsolute(cpu);
     break;
   case (0x10):
-    // branchOnResultPlusRelative(cpu);
+    // branchOnPlusRelative(cpu);
     break;
   case (0x11):
     // orAIndirectY(cpu);
@@ -157,7 +157,7 @@ void executeInstruction(CPU *cpu) {
     orAZeroPageX(cpu);
     break;
   case (0x16):
-    // shiftLeftOneBitZeroPageX(cpu);
+    // arithmeticShiftLeftZeroPageX(cpu);
     break;
   case (0x18):
     // clearCarry(cpu);
@@ -168,10 +168,10 @@ void executeInstruction(CPU *cpu) {
     orAAbsoluteX(cpu);
     break;
   case (0x1E):
-    // shiftLeftOneBitAbsoluteX(cpu);
+    // arithmeticShiftLeftAbsoluteX(cpu);
     break;
   case (0x20):
-    // jumpToNewLocationSavingReturnAddressAbsolute(cpu);
+    // jumpSubRoutineAbsolute(cpu);
     break;
   case (0x21):
     // andIndirectX(cpu);
@@ -230,11 +230,167 @@ void executeInstruction(CPU *cpu) {
   case (0x40):
     // returnFromInterrupt(cpu);
     break;
+  case (0x41):
+    // exclusiveOrIndirectX(cpu);
+    break;
+  case (0x45):
+    // exclusiveOrZeroPage(cpu);
+    break;
+  case (0x46):
+    // logisticalShiftRightZeroPage(cpu);
+    break;
+  case (0x48):
+    // pushAccumulatorOntoStack(cpu);
+    break;
+  case (0x49):
+    // exclusiveOrImmediate(cpu);
+    break;
+  case (0x4A):
+    // logisticalShiftRightAccumulator(cpu);
+    break;
+  case (0x4C):
+    // jumpAbsolute(cpu);
+    break;
+  case (0x4D):
+    // exclusiveOrAbsolute(cpu);
+    break;
+  case (0x4E):
+    // logisticalShiftRightAbsolute(cpu);
+    break;
   case (0x50):
-    // branchOnOverflowClear(cpu);
+    // branchOnOverflowClearRelative(cpu);
+    break;
+  case (0x51):
+    // exclusiveOrIndirectY(cpu);
+    break;
+  case (0x55):
+    // exclusiveOrZeroPageX(cpu);
+    break;
+  case (0x56):
+    // logisticalShiftRightZeroPageX(cpu);
+    break;
+  case (0x58):
+    // clearInterruptDisable(cpu);
+    break;
+  case (0x59):
+    // exclusiveOrAbsoluteY(cpu);
+    break;
+  case (0x5D):
+    // exclusiveOrAbsoluteX(cpu);
+    break;
+  case (0x5E):
+    // logisticalShiftRightAbsoluteX(cpu);
     break;
   case (0x60):
     // returnFromSubroutine(cpu);
+    break;
+  case (0x61):
+    // addWithCarryIndirectX(cpu);
+    break;
+  case (0x65):
+    // addWithCarryZeroPage(cpu);
+    break;
+  case (0x66):
+    // rotateRightZeroPage(cpu);
+    break;
+  case (0x68):
+    // pullAccumulatorFromStack(cpu);
+    break;
+  case (0x69):
+    // addWithCarryImmediate(cpu);
+    break;
+  case (0x6A):
+    // rotateRightAccumulator(cpu);
+    break;
+  case (0x6C):
+    // jumpIndirect(cpu);
+    break;
+  case (0x6D):
+    // addWithCarryAbsolute(cpu);
+    break;
+  case (0x6E):
+    // rotateRightAbsolute(cpu);
+    break;
+  case (0x70):
+    // branchonOverflowSetRelative(cpu);
+    break;
+  case (0x71):
+    // addWithCarryIndirectY(cpu);
+    break;
+  case (0x75):
+    // addWithCarryZeroPageX(cpu);
+    break;
+  case (0x76):
+    // rotateRightZeroPageX(cpu);
+    break;
+  case (0x78):
+    // setInterruptDisable(cpu);
+    break;
+  case (0x79):
+    // addWithCarryAbsoluteY(cpu);
+    break;
+  case (0x7D):
+    // addWithCarryAbsoluteX(cpu);
+    break;
+  case (0x7E):
+    // rotateRightAbsoluteX(cpu);
+    break;
+  case (0x81):
+    // storeAccumulatorIndirectX(cpu);
+    break;
+  case (0x84):
+    // storeYZeroPage(cpu);
+    break;
+  case (0x85):
+    // storeAccumulatorZeroPage(cpu);
+    break;
+  case (0x86):
+    // storeXZeroPage(cpu);
+    break;
+  case (0x88):
+    // decrementY(cpu);
+    break;
+  case (0x8A):
+    // transferXToAccumulator(cpu);
+    break;
+  case (0x8C):
+    // storeYAbsolute(cpu);
+    break;
+  case (0x8D):
+    // storeAccumulatorAbsolute(cpu);
+    break;
+  case (0x8E):
+    // storeXAbsolute(cpu);
+    break;
+  case (0x90):
+    // branchOnClearCarryRelative(cpu);
+    break;
+  case (0x91):
+    // storeAccumulatorIndirectY(cpu);
+    break;
+  case (0x94):
+    // storeYZeroPageX(cpu);
+    break;
+  case (0x95):
+    // storeAccumulatorZeroPageX(cpu);
+    break;
+  case (0x96):
+    // storeXZeroPageY(cpu);
+    break;
+  case (0x98):
+    // transferYToAccumulator(cpu);
+    break;
+  case (0x99):
+    // storeAccumulatorAbsoluteY(cpu);
+    break;
+  case (0x9A):
+    // transferXToStackPointer(cpu);
+    break;
+  case (0x9D):
+    // storeAccumulatorAbsoluteX(cpu);
+    break;
+  case (0xA0):
+    // loadYImmediate(cpu);
     break;
   default:
     break;
