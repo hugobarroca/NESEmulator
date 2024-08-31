@@ -120,29 +120,121 @@ void executeInstruction(CPU *cpu) {
   uint8_t instruction = readBus(cpu, prAddr);
   cpu->PC++;
   switch (instruction) {
-  case (0x09):
-    orAImmediate(cpu);
-    break;
-  case (0x05):
-    orAZeroPage(cpu);
-    break;
-  case (0x15):
-    orAZeroPageX(cpu);
-    break;
-  case (0x0D):
-    orAAbsolute(cpu);
-    break;
-  case (0x1D):
-    orAAbsoluteX(cpu);
-    break;
-  case (0x19):
-    // orAbsoluteY(cpu);
+  case (0x00):
+    // forceBreak(cpu);
     break;
   case (0x01):
     // orAIndirectX(cpu);
     break;
+  case (0x05):
+    orAZeroPage(cpu);
+    break;
+  case (0x06):
+    // shiftLeftOneBitZeroPage(cpu);
+    break;
+  case (0x08):
+    // pushProcessorStatusOnStack(cpu);
+    break;
+  case (0x09):
+    orAImmediate(cpu);
+    break;
+  case (0x0A):
+    // shiftLeftOneBitAccumulator(cpu);
+    break;
+  case (0x0D):
+    orAAbsolute(cpu);
+    break;
+  case (0x0E):
+    // shiftLeftOneBitAbsolute(cpu);
+    break;
+  case (0x10):
+    // branchOnResultPlusRelative(cpu);
+    break;
   case (0x11):
     // orAIndirectY(cpu);
+    break;
+  case (0x15):
+    orAZeroPageX(cpu);
+    break;
+  case (0x16):
+    // shiftLeftOneBitZeroPageX(cpu);
+    break;
+  case (0x18):
+    // clearCarry(cpu);
+  case (0x19):
+    // orAbsoluteY(cpu);
+    break;
+  case (0x1D):
+    orAAbsoluteX(cpu);
+    break;
+  case (0x1E):
+    // shiftLeftOneBitAbsoluteX(cpu);
+    break;
+  case (0x20):
+    // jumpToNewLocationSavingReturnAddressAbsolute(cpu);
+    break;
+  case (0x21):
+    // andIndirectX(cpu);
+    break;
+  case (0x24):
+    // bitTestZeroPage(cpu);
+    break;
+  case (0x25):
+    // andZeroPage(cpu);
+    break;
+  case (0x26):
+    // rotateLeftZeroPage(cpu);
+    break;
+  case (0x28):
+    // pullProcessorStatusFromStack(cpu);
+    break;
+  case (0x29):
+    // andImmediate(cpu);
+    break;
+  case (0x2A):
+    // rotateLeftAccumulator(cpu);
+    break;
+  case (0x2C):
+    // bitTestAbsolute(cpu);
+    break;
+  case (0x2D):
+    // andAbsolute(cpu);
+    break;
+  case (0x2E):
+    // rotateLeftAbsolute(cpu);
+    break;
+  case (0x30):
+    // branchOnMinusRelative(cpu);
+    break;
+  case (0x31):
+    // andIndirectY(cpu);
+    break;
+  case (0x35):
+    // andZeroPageX(cpu);
+    break;
+  case (0x36):
+    // rotateLeftZeroPageX(cpu);
+    break;
+  case (0x38):
+    // setCarry(cpu);
+    break;
+  case (0x39):
+    // andAbsoluteY(cpu);
+    break;
+  case (0x3D):
+    // andAbsoluteX(cpu);
+    break;
+  case (0x3E):
+    // rotateLeftAbsoluteX(cpu);
+    break;
+  case (0x40):
+    // returnFromInterrupt(cpu);
+    break;
+  case (0x50):
+    // branchOnOverflowClear(cpu);
+    break;
+  case (0x60):
+    // returnFromSubroutine(cpu);
     break;
   default:
     break;
