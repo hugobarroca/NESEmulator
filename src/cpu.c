@@ -2,6 +2,7 @@
 // CPU (based on the 6502 CPU).
 #include "cpu.h"
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -115,12 +116,22 @@ void orAAbsoluteX(CPU *cpu) {
   cpu->A = cpu->A | memValue;
 }
 
+void arithmeticShiftLeftZeroPage(CPU *cpu) {
+  uint8_t pcAddr = readBus(cpu, cpu->PC);
+  uint8_t address = readBus(cpu, pcAddr);
+  cpu->PC++;
+  uint8_t memValue = readBus(cpu, (uint16_t)address);
+  uint8_t shiftResult = memValue << 2;
+  cpu->Memory[address] = shiftResult;
+}
+
 void executeInstruction(CPU *cpu) {
   uint8_t prAddr = readBus(cpu, cpu->PC);
   uint8_t instruction = readBus(cpu, prAddr);
   cpu->PC++;
   switch (instruction) {
   case (0x00):
+    // BRK
     // forceBreak(cpu);
     break;
   case (0x01):
@@ -130,7 +141,8 @@ void executeInstruction(CPU *cpu) {
     orAZeroPage(cpu);
     break;
   case (0x06):
-    // arithmeticShiftLeftZeroPage(cpu);
+    // ASL oper, 2 bytes, 5 cycles
+    arithmeticShiftLeftZeroPage(cpu);
     break;
   case (0x08):
     // pushProcessorStatusOnStack(cpu);
