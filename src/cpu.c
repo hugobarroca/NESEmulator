@@ -66,6 +66,14 @@ uint8_t readBus(CPU *cpu, uint16_t address) {
   return -1;
 }
 
+void forceBreak(CPU *cpu) {
+  // Push PC + 2 to stack;
+  pushStack(cpu, cpu->PC + 2);
+  // Push Processor Status to stack with I flag set to 1
+  pushStack(cpu, cpu->P | 00000100);
+  // Sets PC to be equal to FFFE and FFF0
+  cpu->PC = cpu->Memory[0xFFFE];
+}
 void orAImmediate(CPU *cpu) {
   printf("Executing orAImmediate instruction.");
   uint8_t pcAddr = readBus(cpu, cpu->PC);
@@ -132,7 +140,7 @@ void executeInstruction(CPU *cpu) {
   switch (instruction) {
   case (0x00):
     // BRK
-    // forceBreak(cpu);
+    forceBreak(cpu);
     break;
   case (0x01):
     // orAIndirectX(cpu);
