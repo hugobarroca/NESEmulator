@@ -1,7 +1,6 @@
 // This file is meant to hold all the necessary code to emulate the Ricoh 2A03
 // CPU (based on the 6502 CPU).
 #include "cpu.h"
-#include <cstdint>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -77,6 +76,8 @@ void forceBreak(CPU *cpu) {
 }
 
 void orAIndirectX(CPU *cpu) {
+  // 2 bytes, 4 cycles
+  // Get second instruction byte
   uint16_t pcAddr = readBus(cpu, cpu->PC);
   cpu->PC++;
   uint8_t baseAddr1 = readBus(cpu, pcAddr + cpu->X);
@@ -95,9 +96,12 @@ void orAImmediate(CPU *cpu) {
 }
 
 void orAZeroPage(CPU *cpu) {
-  uint8_t pcAddr = readBus(cpu, cpu->PC);
-  uint8_t address = readBus(cpu, pcAddr);
+  // 2 bytes, 3 cycles
+  // Get second instruction byte
+  uint16_t pcAddr = readBus(cpu, cpu->PC);
   cpu->PC++;
+  // An 8-bit addr is enough to access ZeroPage
+  uint8_t address = readBus(cpu, pcAddr);
   cpu->A = cpu->A | readBus(cpu, (uint16_t)address);
 }
 
@@ -155,10 +159,11 @@ void executeInstruction(CPU *cpu) {
     forceBreak(cpu);
     break;
   case (0x01):
-    //
+    // ORA (oper,X)
     orAIndirectX(cpu);
     break;
   case (0x05):
+    // ORA oper, ex: ORA $20
     orAZeroPage(cpu);
     break;
   case (0x06):
