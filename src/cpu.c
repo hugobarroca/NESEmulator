@@ -1,6 +1,7 @@
 // This file is meant to hold all the necessary code to emulate the Ricoh 2A03
 // CPU (based on the 6502 CPU).
 #include "cpu.h"
+#include <cstdint>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -74,6 +75,17 @@ void forceBreak(CPU *cpu) {
   // Sets PC to be equal to FFFE and FFF0
   cpu->PC = cpu->Memory[0xFFFE];
 }
+
+void orAIndirectX(CPU *cpu) {
+  uint16_t pcAddr = readBus(cpu, cpu->PC);
+  cpu->PC++;
+  uint8_t baseAddr1 = readBus(cpu, pcAddr + cpu->X);
+  uint8_t baseAddr2 = readBus(cpu, pcAddr + cpu->X + 1);
+  uint16_t finalAddr = (baseAddr2 << 8) + (uint16_t)baseAddr1;
+  uint8_t finalValue = readBus(cpu, finalAddr) | cpu->A;
+  cpu->A = finalValue;
+}
+
 void orAImmediate(CPU *cpu) {
   printf("Executing orAImmediate instruction.");
   uint8_t pcAddr = readBus(cpu, cpu->PC);
@@ -143,7 +155,8 @@ void executeInstruction(CPU *cpu) {
     forceBreak(cpu);
     break;
   case (0x01):
-    // orAIndirectX(cpu);
+    //
+    orAIndirectX(cpu);
     break;
   case (0x05):
     orAZeroPage(cpu);
