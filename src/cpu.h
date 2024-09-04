@@ -5,14 +5,14 @@ typedef struct {
 	uint8_t X;
 	uint8_t Y;
 	// Processor Status
-	// 0 Carry Flag
-	// 1 Zero Flag
-	// 2 Interrupt Disable
-	// 3 Decimal Mode Flag
+	// 0 Carry Flag (C) 
+	// 1 Zero Flag (Z)
+	// 2 Interrupt Disable (I)
+	// 3 Decimal Mode Flag (D)
 	// 4 B Flag (Mostly unused) Flag
-	// 5 Unused Flag
-	// 6 Overflow Flag
-	// 7 Negative Flag 
+	// 5 Unused Flag 
+	// 6 Overflow Flag (V)
+	// 7 Negative Flag (N)
 	uint8_t P;
 	uint8_t S;
 	uint16_t PC;

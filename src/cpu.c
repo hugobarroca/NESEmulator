@@ -148,18 +148,20 @@ void pushProcessorStatusOnStack(CPU *cpu) {
   pushStack(cpu, cpu->P);
 }
 
+// ORA #oper, NZ, 2 bytes, 2 cycles
 void orAImmediate(CPU *cpu) {
-  // Get seconding instruction byte
+  // Get second instruction byte
   uint8_t pcAddr = readBus(cpu, cpu->PC);
   cpu->PC++;
   uint8_t immediateValue = readBus(cpu, pcAddr);
   uint8_t result = cpu->A | immediateValue;
-  // Set zero flag is applicable
+  // Set Zero flag (Z)
   if (result == 0) {
-    cpu->P = cpu->P | 00000010;
+    cpu->P = cpu->P | 0x02;
   }
-  if ((result & 10000000) == 128) {
-    cpu->P = cpu->P | 10000000;
+  // Set Negative flag (N)
+  if ((result & 0x80) == 0x80) {
+    cpu->P = cpu->P | 0x80;
   }
   cpu->A = result;
 }
