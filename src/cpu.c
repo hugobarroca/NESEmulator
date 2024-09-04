@@ -226,6 +226,13 @@ void orAAbsoluteX(CPU *cpu) {
   cpu->A = result;
 }
 
+// 0x10, BPL oper, -, 2 bytes, 2 cycles
+void branchOnPlusRelative(CPU *cpu) {
+  uint8_t oper = fetchInstructionByte(cpu);
+  if ((cpu->P & 0x80) != 0x80) {
+    cpu->PC = cpu->PC + oper;
+  }
+}
 
 void executeInstruction(CPU *cpu) {
   uint8_t prAddr = readBus(cpu, cpu->PC);
@@ -269,7 +276,7 @@ void executeInstruction(CPU *cpu) {
     arithmeticShiftLeftAbsolute(cpu);
     break;
   case (0x10):
-    // branchOnPlusRelative(cpu);
+    branchOnPlusRelative(cpu);
     break;
   case (0x11):
     // orAIndirectY(cpu);
