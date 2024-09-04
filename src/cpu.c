@@ -87,14 +87,6 @@ void orAIndirectX(CPU *cpu) {
   cpu->A = finalValue;
 }
 
-void orAImmediate(CPU *cpu) {
-  printf("Executing orAImmediate instruction.");
-  uint8_t pcAddr = readBus(cpu, cpu->PC);
-  uint8_t immediateValue = readBus(cpu, pcAddr);
-  cpu->PC++;
-  cpu->A = cpu->A | immediateValue;
-}
-
 void orAZeroPage(CPU *cpu) {
   // 2 bytes, 3 cycles
   // Get second instruction byte
@@ -141,12 +133,35 @@ void orAAbsoluteX(CPU *cpu) {
 }
 
 void arithmeticShiftLeftZeroPage(CPU *cpu) {
-  uint8_t pcAddr = readBus(cpu, cpu->PC);
-  uint8_t address = readBus(cpu, pcAddr);
+  // Get second instruction byte
+  uint16_t pcAddr = readBus(cpu, cpu->PC);
   cpu->PC++;
-  uint8_t memValue = readBus(cpu, (uint16_t)address);
-  uint8_t shiftResult = memValue << 2;
-  cpu->Memory[address] = shiftResult;
+  uint8_t oper = readBus(cpu, pcAddr);
+  // Get value from ZeroPage
+  uint8_t memValue = readBus(cpu, (uint16_t)oper);
+  // Shift value and set it in ZeroPage
+  cpu->Memory[oper] = memValue << 1;
+}
+void pushProcessorStatusOnStack(CPU *cpu) {
+  // Set B Flag and Pin 5 to 1 before pushing
+  uint8_t status = cpu->P | 00110000;
+  pushStack(cpu, cpu->P);
+}
+
+void orAImmediate(CPU *cpu) {
+  // Get seconding instruction byte
+  uint8_t pcAddr = readBus(cpu, cpu->PC);
+  cpu->PC++;
+  uint8_t immediateValue = readBus(cpu, pcAddr);
+  uint8_t result = cpu->A | immediateValue;
+  // Set zero flag is applicable
+  if (result == 0) {
+    cpu->P = cpu->P | 00000010;
+  }
+  if ((result & 10000000) == 128) {
+    cpu->P = cpu->P | 10000000;
+  }
+  cpu->A = result;
 }
 
 void executeInstruction(CPU *cpu) {
@@ -159,7 +174,7 @@ void executeInstruction(CPU *cpu) {
     forceBreak(cpu);
     break;
   case (0x01):
-    // ORA (oper,X)
+    // ORA (oper,X) ex: ORA ($20,X)
     orAIndirectX(cpu);
     break;
   case (0x05):
@@ -167,13 +182,15 @@ void executeInstruction(CPU *cpu) {
     orAZeroPage(cpu);
     break;
   case (0x06):
-    // ASL oper, 2 bytes, 5 cycles
+    // ASL oper, ex ASL $20
     arithmeticShiftLeftZeroPage(cpu);
     break;
   case (0x08):
-    // pushProcessorStatusOnStack(cpu);
+    // PHP
+    pushProcessorStatusOnStack(cpu);
     break;
   case (0x09):
+    // ORA #oper, ex: ORA #7
     orAImmediate(cpu);
     break;
   case (0x0A):
