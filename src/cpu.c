@@ -1,6 +1,7 @@
 // This file is meant to hold all the necessary code to emulate the Ricoh 2A03
 // CPU (based on the 6502 CPU).
 #include "cpu.h"
+#include <cstdint>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -70,7 +71,7 @@ void forceBreak(CPU *cpu) {
   // Push PC + 2 to stack;
   pushStack(cpu, cpu->PC + 2);
   // Push Processor Status to stack with I flag set to 1
-  pushStack(cpu, cpu->P | 00000100);
+  pushStack(cpu, cpu->P | 0x04);
   // Sets PC to be equal to FFFE and FFF0
   cpu->PC = cpu->Memory[0xFFFE];
 }
@@ -144,7 +145,7 @@ void arithmeticShiftLeftZeroPage(CPU *cpu) {
 }
 void pushProcessorStatusOnStack(CPU *cpu) {
   // Set B Flag and Pin 5 to 1 before pushing
-  uint8_t status = cpu->P | 00110000;
+  uint8_t status = cpu->P | 0x30; // 00110000
   pushStack(cpu, cpu->P);
 }
 
@@ -166,6 +167,23 @@ void orAImmediate(CPU *cpu) {
   cpu->A = result;
 }
 
+// ASL, NZC, 1 byte, 2 cycles
+void arithmeticShiftLeftAccumulator(CPU *cpu) {
+  // Set Carry Flag
+  if ((cpu->A & 0x80) == 0x80) {
+    cpu->P = cpu->P | 0x01;
+  }
+  uint8_t result = cpu->A << 1;
+  // Set Zero flag (Z)
+  if (result == 0) {
+    cpu->P = cpu->P | 0x02;
+  }
+  // Set Negative flag (N)
+  if ((result & 0x80) == 0x80) {
+    cpu->P = cpu->P | 0x80;
+  }
+  cpu->A = result;
+}
 void executeInstruction(CPU *cpu) {
   uint8_t prAddr = readBus(cpu, cpu->PC);
   uint8_t instruction = readBus(cpu, prAddr);
@@ -196,7 +214,8 @@ void executeInstruction(CPU *cpu) {
     orAImmediate(cpu);
     break;
   case (0x0A):
-    // arithmeticShiftLeftAccumulator(cpu);
+    // ASL A
+    arithmeticShiftLeftAccumulator(cpu);
     break;
   case (0x0D):
     orAAbsolute(cpu);
