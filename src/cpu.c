@@ -115,12 +115,13 @@ void orAIndirectX(CPU *cpu) {
 
 // 0x05, ORA oper, NZ, 2 bytes, 3 cycles
 void orAZeroPage(CPU *cpu) {
-  // Get second instruction byte
-  uint16_t pcAddr = readBus(cpu, cpu->PC);
-  cpu->PC++;
+  uint8_t oper = fetchInstructionByte(cpu);
   // An 8-bit addr is enough to access ZeroPage
-  uint8_t address = readBus(cpu, pcAddr);
-  cpu->A = cpu->A | readBus(cpu, (uint16_t)address);
+  uint8_t memValue = readBus(cpu, oper);
+  uint8_t result = cpu->A | memValue;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->A = result;
 }
 
 // 0x15, ORA oper,X, NZ, 2 bytes, 4 cycles
