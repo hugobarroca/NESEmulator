@@ -66,10 +66,11 @@ uint8_t readBus(CPU *cpu, uint16_t address) {
   return -1;
 }
 
+// Fetches instruction from memory at PC location, and increments PC
 uint8_t fetchInstructionByte(CPU *cpu) {
-  uint8_t pcAddr = readBus(cpu, cpu->PC);
+  uint8_t instruction = readBus(cpu, cpu->PC);
   cpu->PC++;
-  return readBus(cpu, pcAddr);
+  return instruction;
 }
 
 // ------------- INSTRUCTIONS -------------
@@ -87,15 +88,14 @@ void forceBreak(CPU *cpu) {
 // Note: This addressing mode is ZeroPage, hence why it only need 2 bytes
 // 0x01, ORA(oper,X), NZ, 2 bytes, 6 cycles
 void orAIndirectX(CPU *cpu) {
-  uint8_t baseAddr = fetchInstructionByte(cpu);
+  uint8_t baseAddress = fetchInstructionByte(cpu);
+  uint8_t offset = cpu->X;
   // Get second instruction byte
-  uint16_t pcAddr = readBus(cpu, cpu->PC);
-  cpu->PC++;
-  uint8_t baseAddr1 = readBus(cpu, pcAddr + cpu->X);
-  uint8_t baseAddr2 = readBus(cpu, pcAddr + cpu->X + 1);
-  uint16_t finalAddr = (baseAddr2 << 8) + (uint16_t)baseAddr1;
-  uint8_t finalValue = readBus(cpu, finalAddr) | cpu->A;
-  cpu->A = finalValue;
+  uint8_t ll = readBus(cpu, baseAddress + cpu->X);
+  uint8_t hh = readBus(cpu, baseAddress + cpu->X + 1);
+  uint16_t effectiveAddress = (hh << 8) + (uint16_t)ll;
+  uint8_t result = cpu->A | readBus(cpu, effectiveAddress);
+  cpu->A = result;
 }
 
 // 0x05, ORA oper, NZ, 2 bytes, 3 cycles
