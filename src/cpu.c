@@ -86,6 +86,12 @@ void setNegativeFlagIfNegative(CPU *cpu, uint8_t result) {
     cpu->P = cpu->P | 0x02;
   }
 }
+
+void setOverflowFlagIfOverflow(CPU *cpu, uint8_t original, uint8_t result) {
+  if (result > original) {
+    cpu->P = cpu->P | 0x40;
+  }
+}
 // ------------- INSTRUCTIONS -------------
 
 // 0x00, BRK, I, 1 byte, 7 cycles
@@ -124,109 +130,102 @@ void orAZeroPage(CPU *cpu) {
   cpu->A = result;
 }
 
-// 0x15, ORA oper,X, NZ, 2 bytes, 4 cycles
-void orAZeroPageX(CPU *cpu) {
-  uint8_t pcAddr = readBus(cpu, cpu->PC);
-  uint8_t pcValue = readBus(cpu, pcAddr);
-  cpu->PC++;
-  uint16_t address = (uint16_t)pcValue + cpu->X;
-  uint8_t memValue = readBus(cpu, address);
-  cpu->A = cpu->A | memValue;
-}
-
-// 0x1D, ORA oper,X, NZ, 3 bytes, 4 cycles
-void orAAbsoluteX(CPU *cpu) {
-  uint8_t pcAddr = readBus(cpu, cpu->PC);
-  uint8_t addr1 = readBus(cpu, pcAddr);
-  cpu->PC++;
-  uint8_t addr2 = readBus(cpu, pcAddr);
-  cpu->PC++;
-  uint16_t address = (uint16_t)addr1 << 8 | addr2;
-  // Get the value of the offset from the X register
-  uint8_t offset = readBus(cpu, cpu->X);
-  // Add it to the memory address value
-  uint16_t finalAddr = address + offset;
-  uint8_t memValue = readBus(cpu, finalAddr);
-  cpu->A = cpu->A | memValue;
-}
-
+// 0x06, ASL oper, NZC, 2 bytes, 5 cycles
 void arithmeticShiftLeftZeroPage(CPU *cpu) {
-  // Get second instruction byte
-  uint16_t pcAddr = readBus(cpu, cpu->PC);
-  cpu->PC++;
-  uint8_t oper = readBus(cpu, pcAddr);
-  // Get value from ZeroPage
+  uint8_t oper = fetchInstructionByte(cpu);
   uint8_t memValue = readBus(cpu, (uint16_t)oper);
   // Shift value and set it in ZeroPage
-  cpu->Memory[oper] = memValue << 1;
+  uint8_t result = memValue << 1;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  setOverflowFlagIfOverflow(cpu, memValue, result);
+  cpu->Memory[oper] = result;
 }
+
+// 0x08, PHP, -, 1 byte, 3 cycles
 void pushProcessorStatusOnStack(CPU *cpu) {
   // Set B Flag and Pin 5 to 1 before pushing
-  uint8_t status = cpu->P | 0x30; // 00110000
+  cpu->P = cpu->P | 0x30; // 00110000
   pushStack(cpu, cpu->P);
 }
 
-// ORA #oper, NZ, 2 bytes, 2 cycles
+// 0x09, ORA #oper, NZ, 2 bytes, 2 cycles
 void orAImmediate(CPU *cpu) {
-  // Get second instruction byte
-  uint8_t pcAddr = readBus(cpu, cpu->PC);
-  cpu->PC++;
-  uint8_t immediateValue = readBus(cpu, pcAddr);
-  uint8_t result = cpu->A | immediateValue;
-  // Set Zero flag (Z)
-  if (result == 0) {
-    cpu->P = cpu->P | 0x02;
-  }
-  // Set Negative flag (N)
-  if ((result & 0x80) == 0x80) {
-    cpu->P = cpu->P | 0x80;
-  }
+  uint8_t oper = fetchInstructionByte(cpu);
+  uint8_t result = cpu->A | oper;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
   cpu->A = result;
 }
 
-// ASL, NZC, 1 byte, 2 cycles
+// 0x0A, ASL, NZC, 1 byte, 2 cycles
 void arithmeticShiftLeftAccumulator(CPU *cpu) {
   // Set Carry Flag
   if ((cpu->A & 0x80) == 0x80) {
     cpu->P = cpu->P | 0x01;
   }
   uint8_t result = cpu->A << 1;
-  // Set Zero flag (Z)
-  if (result == 0) {
-    cpu->P = cpu->P | 0x02;
-  }
-  // Set Negative flag (N)
-  if ((result & 0x80) == 0x80) {
-    cpu->P = cpu->P | 0x80;
-  }
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
   cpu->A = result;
 }
 
-// ORA oper, NZ, 3 bytes, 4 cycles
+// 0x0D, ORA oper, NZ, 3 bytes, 4 cycles
 void orAAbsolute(CPU *cpu) {
-  // Get second instruction byte
-  uint8_t pcAddr = readBus(cpu, cpu->PC);
-  cpu->PC++;
-  uint8_t addr1 = readBus(cpu, pcAddr);
-  // Get third instruction byte
-  uint8_t addr2 = readBus(cpu, pcAddr);
-  cpu->PC++;
-  uint16_t address = (uint16_t)addr1 << 8 | addr2;
+  uint8_t ll = fetchInstructionByte(cpu);
+  uint8_t hh = fetchInstructionByte(cpu);
+  uint16_t address = (uint16_t)hh << 8 | ll;
   uint8_t memValue = readBus(cpu, address);
   uint8_t result = cpu->A | memValue;
-  // Set Zero flag (Z)
-  if (result == 0) {
-    cpu->P = cpu->P | 0x02;
-  }
-  // Set Negative flag (N)
-  if ((result & 0x80) == 0x80) {
-    cpu->P = cpu->P | 0x80;
-  }
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
   cpu->A = result;
 }
 
 // 0x0E, ASL oper, NZC, 3 bytes, 6 cycles
-void arithmeticShiftLeftAbsolute(CPU *cpu) {}
+void arithmeticShiftLeftAbsolute(CPU *cpu) {
+  uint8_t ll = fetchInstructionByte(cpu);
+  uint8_t hh = fetchInstructionByte(cpu);
+  uint16_t address = (uint16_t)hh << 8 | ll;
+  uint8_t memValue = readBus(cpu, address);
+  // Set Carry Flag
+  if ((memValue & 0x80) == 0x80) {
+    cpu->P = cpu->P | 0x01;
+  } else {
+    cpu->P = cpu->P & 0xFE;
+  }
+  uint8_t result = memValue << 1;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->Memory[address] = result;
+}
+
+// 0x15, ORA oper,X, NZ, 2 bytes, 4 cycles
+void orAZeroPageX(CPU *cpu) {
+  uint8_t oper = fetchInstructionByte(cpu);
+  uint16_t address = oper + cpu->X;
+  uint8_t memValue = readBus(cpu, address);
+  uint8_t result = cpu->A | memValue;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->A = result;
+}
+
+// 0x1D, ORA oper,X, NZ, 3 bytes, 4 cycles
+void orAAbsoluteX(CPU *cpu) {
+  uint8_t ll = fetchInstructionByte(cpu);
+  uint8_t hh = fetchInstructionByte(cpu);
+  uint16_t baseAddress = (uint16_t)hh << 8 | ll;
+  uint8_t offset = readBus(cpu, cpu->X);
+  // Add it to the memory address value
+  uint16_t effectiveAddress = baseAddress + offset;
+  uint8_t memValue = readBus(cpu, effectiveAddress);
+  uint8_t result = cpu->A | memValue;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->A = result;
+}
+
 
 void executeInstruction(CPU *cpu) {
   uint8_t prAddr = readBus(cpu, cpu->PC);
