@@ -1,7 +1,6 @@
 // This file is meant to hold all the necessary code to emulate the Ricoh 2A03
 // CPU (based on the 6502 CPU).
 #include "cpu.h"
-#include <cstdint>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -67,6 +66,15 @@ uint8_t readBus(CPU *cpu, uint16_t address) {
   return -1;
 }
 
+uint8_t fetchInstructionByte(CPU *cpu) {
+  uint8_t pcAddr = readBus(cpu, cpu->PC);
+  cpu->PC++;
+  return readBus(cpu, pcAddr);
+}
+
+// ------------- INSTRUCTIONS -------------
+
+// 0x00, BRK, I, 1 byte, 7 cycles
 void forceBreak(CPU *cpu) {
   // Push PC + 2 to stack;
   pushStack(cpu, cpu->PC + 2);
@@ -76,8 +84,10 @@ void forceBreak(CPU *cpu) {
   cpu->PC = cpu->Memory[0xFFFE];
 }
 
+// Note: This addressing mode is ZeroPage, hence why it only need 2 bytes
+// 0x01, ORA(oper,X), NZ, 2 bytes, 6 cycles
 void orAIndirectX(CPU *cpu) {
-  // 2 bytes, 4 cycles
+  uint8_t baseAddr = fetchInstructionByte(cpu);
   // Get second instruction byte
   uint16_t pcAddr = readBus(cpu, cpu->PC);
   cpu->PC++;
@@ -88,6 +98,7 @@ void orAIndirectX(CPU *cpu) {
   cpu->A = finalValue;
 }
 
+// 0x05, ORA oper, NZ, 2 bytes, 3 cycles
 void orAZeroPage(CPU *cpu) {
   // 2 bytes, 3 cycles
   // Get second instruction byte
@@ -98,6 +109,7 @@ void orAZeroPage(CPU *cpu) {
   cpu->A = cpu->A | readBus(cpu, (uint16_t)address);
 }
 
+// 0x15, ORA oper,X, NZ, 2 bytes, 4 cycles
 void orAZeroPageX(CPU *cpu) {
   uint8_t pcAddr = readBus(cpu, cpu->PC);
   uint8_t pcValue = readBus(cpu, pcAddr);
@@ -107,17 +119,7 @@ void orAZeroPageX(CPU *cpu) {
   cpu->A = cpu->A | memValue;
 }
 
-void orAAbsolute(CPU *cpu) {
-  uint8_t pcAddr = readBus(cpu, cpu->PC);
-  uint8_t addr1 = readBus(cpu, pcAddr);
-  cpu->PC++;
-  uint8_t addr2 = readBus(cpu, pcAddr);
-  cpu->PC++;
-  uint16_t address = (uint16_t)addr1 << 8 | addr2;
-  uint8_t memValue = readBus(cpu, address);
-  cpu->A = cpu->A | memValue;
-}
-
+// 0x1D, ORA oper,X, NZ, 3 bytes, 4 cycles
 void orAAbsoluteX(CPU *cpu) {
   uint8_t pcAddr = readBus(cpu, cpu->PC);
   uint8_t addr1 = readBus(cpu, pcAddr);
@@ -184,6 +186,33 @@ void arithmeticShiftLeftAccumulator(CPU *cpu) {
   }
   cpu->A = result;
 }
+
+// ORA oper, NZ, 3 bytes, 4 cycles
+void orAAbsolute(CPU *cpu) {
+  // Get second instruction byte
+  uint8_t pcAddr = readBus(cpu, cpu->PC);
+  cpu->PC++;
+  uint8_t addr1 = readBus(cpu, pcAddr);
+  // Get third instruction byte
+  uint8_t addr2 = readBus(cpu, pcAddr);
+  cpu->PC++;
+  uint16_t address = (uint16_t)addr1 << 8 | addr2;
+  uint8_t memValue = readBus(cpu, address);
+  uint8_t result = cpu->A | memValue;
+  // Set Zero flag (Z)
+  if (result == 0) {
+    cpu->P = cpu->P | 0x02;
+  }
+  // Set Negative flag (N)
+  if ((result & 0x80) == 0x80) {
+    cpu->P = cpu->P | 0x80;
+  }
+  cpu->A = result;
+}
+
+// 0x0E, ASL oper, NZC, 3 bytes, 6 cycles
+void arithmeticShiftLeftAbsolute(CPU *cpu) {}
+
 void executeInstruction(CPU *cpu) {
   uint8_t prAddr = readBus(cpu, cpu->PC);
   uint8_t instruction = readBus(cpu, prAddr);
@@ -218,10 +247,12 @@ void executeInstruction(CPU *cpu) {
     arithmeticShiftLeftAccumulator(cpu);
     break;
   case (0x0D):
+    // ORA oper, ex ORA 20
     orAAbsolute(cpu);
     break;
   case (0x0E):
-    // arithmeticShiftLeftAbsolute(cpu);
+    // ASL opr, ex ASL 20
+    arithmeticShiftLeftAbsolute(cpu);
     break;
   case (0x10):
     // branchOnPlusRelative(cpu);
