@@ -73,6 +73,19 @@ uint8_t fetchInstructionByte(CPU *cpu) {
   return instruction;
 }
 
+// Sets the Zero Flag to 1 in the Status Register if result is zero.
+void setZeroFlagIfZero(CPU *cpu, uint8_t result) {
+  if (result == 0) {
+    cpu->P = cpu->P | 0x02;
+  }
+}
+
+// Sets the Negative Flag to 1 in the Status Register if the result is negative
+void setNegativeFlagIfNegative(CPU *cpu, uint8_t result) {
+  if ((result & 0x80) == 0x80) {
+    cpu->P = cpu->P | 0x02;
+  }
+}
 // ------------- INSTRUCTIONS -------------
 
 // 0x00, BRK, I, 1 byte, 7 cycles
@@ -95,12 +108,13 @@ void orAIndirectX(CPU *cpu) {
   uint8_t hh = readBus(cpu, baseAddress + cpu->X + 1);
   uint16_t effectiveAddress = (hh << 8) + (uint16_t)ll;
   uint8_t result = cpu->A | readBus(cpu, effectiveAddress);
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
   cpu->A = result;
 }
 
 // 0x05, ORA oper, NZ, 2 bytes, 3 cycles
 void orAZeroPage(CPU *cpu) {
-  // 2 bytes, 3 cycles
   // Get second instruction byte
   uint16_t pcAddr = readBus(cpu, cpu->PC);
   cpu->PC++;
