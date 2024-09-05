@@ -134,7 +134,7 @@ uint8_t fetchPreIndexedIndirectX(CPU *cpu) {
   return readBus(cpu, effectiveAddress);
 }
 
-uint8_t fetchPreIndexedIndirectY(CPU *cpu) {
+uint8_t fetchPostIndexedIndirectY(CPU *cpu) {
   uint16_t instructionAddress = fetchInstructionByte(cpu);
   uint8_t ll = readBus(cpu, instructionAddress);
   uint8_t hh = readBus(cpu, instructionAddress);
@@ -386,11 +386,10 @@ void andIndirectX(CPU *cpu) {
 }
 
 // ADC Add Memory to Accumulator with Carry
+// NZCIDV
+// +++--+
 
-// 0x69, ADD #oper, NZCV, 2 bytes, 2 cycles
-void addWithCarryImmediate(CPU *cpu) {
-  uint8_t oper = fetchInstructionByte(cpu);
-  // Check if carry
+void addWithCarry(CPU *cpu, uint8_t oper) {
   bool hasCarry = isCarryFlagSet(cpu);
   uint8_t result = cpu->A + oper + (uint8_t)hasCarry;
   setZeroFlagIfZero(cpu, result);
@@ -400,13 +399,60 @@ void addWithCarryImmediate(CPU *cpu) {
   cpu->A = result;
 }
 
+// 0x69, ADC #oper, 2 bytes, 2 cycles
+void addWithCarryImmediate(CPU *cpu) {
+  uint8_t oper = fetchImmediate(cpu);
+  addWithCarry(cpu, oper);
+}
+
+// 0x65, ADC oper, 2 bytes, 2 cycles
+void addWithCarryZeroPage(CPU *cpu) {
+  uint8_t oper = fetchZeroPage(cpu);
+  addWithCarry(cpu, oper);
+}
+
+// 0x75, ADC oper,X, 2 bytes, 4 cycles
+void addWithCarryZeroPageX(CPU *cpu) {
+  uint8_t oper = fetchZeroPageX(cpu);
+  addWithCarry(cpu, oper);
+}
+
+// 0x6D, ADC oper,X, 2 bytes, 4 cycles
+void addWithCarryAbsolute(CPU *cpu) {
+  uint8_t oper = fetchAbsolute(cpu);
+  addWithCarry(cpu, oper);
+}
+
+// 0x7D, ADC oper, 3 bytes, 4* cycles
+void addWithCarryAbsoluteX(CPU *cpu) {
+  uint8_t oper = fetchAbsoluteX(cpu);
+  addWithCarry(cpu, oper);
+}
+
+// 0x79, ADC oper,Y, 3 bytes, 4* cycles
+void addWithCarryAbsoluteY(CPU *cpu) {
+  uint8_t oper = fetchAbsoluteY(cpu);
+  addWithCarry(cpu, oper);
+}
+
+// 0x61, ADC (oper,X), 2 bytes, 6 cycles
+void addWithCarryIndirectX(CPU *cpu) {
+  uint8_t oper = fetchPreIndexedIndirectX(cpu);
+  addWithCarry(cpu, oper);
+}
+
+// 0x71, ADC (oper),Y, 2 bytes, 5* cycles
+void addWithCarryIndirectY(CPU *cpu) {
+  uint8_t oper = fetchPostIndexedIndirectY(cpu);
+  addWithCarry(cpu, oper);
+}
+
 // BIT Test
 
 // 0x24, BIT oper, Z, 2 bytes, 3 cycles
 // Addressing Mode: ZeroPage
 void bitTestZeroPage(CPU *cpu) {
-  uint8_t oper = fetchInstructionByte(cpu);
-  uint8_t memValue = readBus(cpu, oper);
+  uint8_t memValue = fetchZeroPage(cpu);
   uint8_t nvBits = memValue | 0x3F; // Mask out irrelevant bits
   uint8_t result = cpu->P | 0xC0 & nvBits;
   setZeroFlagIfZero(cpu, result);
@@ -416,10 +462,7 @@ void bitTestZeroPage(CPU *cpu) {
 // 0x2C, BIT oper, Z, 3 bytes, 4 cycles
 // Addressing Mode: Absolute
 void bitTestAbsolute(CPU *cpu) {
-  uint8_t ll = fetchInstructionByte(cpu);
-  uint8_t hh = fetchInstructionByte(cpu);
-  uint16_t baseAddress = (uint16_t)hh << 8 | ll;
-  uint8_t memValue = readBus(cpu, memValue);
+  uint8_t memValue = fetchAbsolute(cpu);
   uint8_t nvBits = memValue | 0x3F; // Mask out irrelevant bits
   uint8_t result = cpu->P | 0xC0 & nvBits;
   setZeroFlagIfZero(cpu, result);
