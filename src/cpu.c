@@ -92,6 +92,15 @@ void setOverflowFlagIfOverflow(CPU *cpu, uint8_t original, uint8_t result) {
     cpu->P = cpu->P | 0x40;
   }
 }
+
+void setCarryFlagConditionally(CPU *cpu, bool condition) {
+  if (condition) {
+    cpu->P = cpu->P | 0x01;
+  } else {
+    cpu->P = cpu->P & 0xFE;
+  }
+}
+
 // ------------- INSTRUCTIONS -------------
 
 // 0x00, BRK, I, 1 byte, 7 cycles
@@ -188,16 +197,31 @@ void arithmeticShiftLeftAbsolute(CPU *cpu) {
   uint8_t hh = fetchInstructionByte(cpu);
   uint16_t address = (uint16_t)hh << 8 | ll;
   uint8_t memValue = readBus(cpu, address);
-  // Set Carry Flag
-  if ((memValue & 0x80) == 0x80) {
-    cpu->P = cpu->P | 0x01;
-  } else {
-    cpu->P = cpu->P & 0xFE;
-  }
+  setCarryFlagConditionally(cpu, (memValue & 0x80) == 0x80);
   uint8_t result = memValue << 1;
   setZeroFlagIfZero(cpu, result);
   setNegativeFlagIfNegative(cpu, result);
   cpu->Memory[address] = result;
+}
+
+// 0x10, BPL oper, -, 2 bytes, 2 cycles
+void branchOnPlusRelative(CPU *cpu) {
+  uint8_t oper = fetchInstructionByte(cpu);
+  if ((cpu->P & 0x80) != 0x80) {
+    cpu->PC = cpu->PC + oper;
+  }
+}
+
+// 0x11, ORA (oper),Y, NZ, 2 bytes, 5 cycles
+void orAIndirectY(CPU *cpu) {
+  uint8_t oper = fetchInstructionByte(cpu);
+  uint16_t ptrAddress = ((uint16_t)oper << 8) + (oper + 1);
+  uint16_t effectiveAddress = ptrAddress + cpu->Y;
+  uint8_t value = readBus(cpu, effectiveAddress);
+  uint8_t result = cpu->A | value;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->A = result;
 }
 
 // 0x15, ORA oper,X, NZ, 2 bytes, 4 cycles
@@ -211,12 +235,26 @@ void orAZeroPageX(CPU *cpu) {
   cpu->A = result;
 }
 
-// 0x1D, ORA oper,X, NZ, 3 bytes, 4 cycles
-void orAAbsoluteX(CPU *cpu) {
+// 0x16, ASL oper,X, NZC, 2 bytes, 6 cycles
+void arithmeticShiftLeftZeroPageX(CPU *cpu) {
+  uint8_t oper = fetchInstructionByte(cpu);
+  uint8_t effectiveAddress = oper + cpu->X;
+  uint8_t value = readBus(cpu, effectiveAddress);
+  uint8_t result = value << 1;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->Memory[effectiveAddress] = result;
+}
+
+// 0x18, CLC, -, 1 byte, 2 cycles
+void clearCarry(CPU *cpu) { cpu->P = cpu->P & 0xFE; }
+
+// 0x19, ORA oper,Y, NZ, 3 bytes, 4* cycles
+void orAAbsoluteY(CPU *cpu) {
   uint8_t ll = fetchInstructionByte(cpu);
   uint8_t hh = fetchInstructionByte(cpu);
   uint16_t baseAddress = (uint16_t)hh << 8 | ll;
-  uint8_t offset = readBus(cpu, cpu->X);
+  uint8_t offset = readBus(cpu, cpu->Y);
   // Add it to the memory address value
   uint16_t effectiveAddress = baseAddress + offset;
   uint8_t memValue = readBus(cpu, effectiveAddress);
@@ -226,12 +264,33 @@ void orAAbsoluteX(CPU *cpu) {
   cpu->A = result;
 }
 
-// 0x10, BPL oper, -, 2 bytes, 2 cycles
-void branchOnPlusRelative(CPU *cpu) {
-  uint8_t oper = fetchInstructionByte(cpu);
-  if ((cpu->P & 0x80) != 0x80) {
-    cpu->PC = cpu->PC + oper;
-  }
+// 0x1D, ORA oper,X, NZ, 3 bytes, 4 cycles
+void orAAbsoluteX(CPU *cpu) {
+  uint8_t ll = fetchInstructionByte(cpu);
+  uint8_t hh = fetchInstructionByte(cpu);
+  uint16_t baseAddress = (uint16_t)hh << 8 | ll;
+  uint8_t offset = readBus(cpu, cpu->X);
+  uint16_t effectiveAddress = baseAddress + offset;
+  uint8_t memValue = readBus(cpu, effectiveAddress);
+  uint8_t result = cpu->A | memValue;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->A = result;
+}
+
+// 0x1E, ASL oper,X, NZC, 3 bytes, 7 cycles
+void arithmeticShiftLeftAbsoluteX(CPU *cpu) {
+  uint8_t ll = fetchInstructionByte(cpu);
+  uint8_t hh = fetchInstructionByte(cpu);
+  uint16_t baseAddress = (uint16_t)hh << 8 | ll;
+  uint8_t offset = readBus(cpu, cpu->X);
+  uint16_t effectiveAddress = baseAddress + offset;
+  uint8_t memValue = readBus(cpu, effectiveAddress);
+  uint8_t result = memValue << 1;
+  setCarryFlagConditionally(cpu, (memValue & 0x80) == 0x80);
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->Memory[effectiveAddress] = result;
 }
 
 void executeInstruction(CPU *cpu) {
@@ -264,7 +323,7 @@ void executeInstruction(CPU *cpu) {
     orAImmediate(cpu);
     break;
   case (0x0A):
-    // ASL A
+    // ASL
     arithmeticShiftLeftAccumulator(cpu);
     break;
   case (0x0D):
@@ -276,27 +335,35 @@ void executeInstruction(CPU *cpu) {
     arithmeticShiftLeftAbsolute(cpu);
     break;
   case (0x10):
+    // BPL oper, ex BPL 20
     branchOnPlusRelative(cpu);
     break;
   case (0x11):
-    // orAIndirectY(cpu);
+    // ORA (oper),Y, ex ORA (20),Y
+    orAIndirectY(cpu);
     break;
   case (0x15):
+    // ORA oper,X
     orAZeroPageX(cpu);
     break;
   case (0x16):
-    // arithmeticShiftLeftZeroPageX(cpu);
+    // ASL oper,X
+    arithmeticShiftLeftZeroPageX(cpu);
     break;
   case (0x18):
-    // clearCarry(cpu);
+    // CLC
+    clearCarry(cpu);
   case (0x19):
-    // orAbsoluteY(cpu);
+    // ORA oper,Y
+    orAAbsoluteY(cpu);
     break;
   case (0x1D):
+    // ORA oper,X
     orAAbsoluteX(cpu);
     break;
   case (0x1E):
-    // arithmeticShiftLeftAbsoluteX(cpu);
+    // ASL oper,X
+    arithmeticShiftLeftAbsoluteX(cpu);
     break;
   case (0x20):
     // jumpSubRoutineAbsolute(cpu);
