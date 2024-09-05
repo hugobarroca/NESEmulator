@@ -73,7 +73,7 @@ uint8_t fetchInstructionByte(CPU *cpu) {
   return instruction;
 }
 
-uint8_t fetchImmediate(CPU *cpu) { return readBus(cpu, cpu->PC); }
+uint8_t fetchImmediate(CPU *cpu) { return fetchInstructionByte(cpu); }
 
 uint8_t fetchAbsolute(CPU *cpu) {
   uint8_t ll = fetchInstructionByte(cpu);
@@ -175,16 +175,6 @@ uint8_t isCarryFlagSet(CPU *cpu) { return (cpu->P & 0x01) == 0x01; }
 
 // ------------- INSTRUCTIONS -------------
 
-// 0x00, BRK, I, 1 byte, 7 cycles
-void forceBreak(CPU *cpu) {
-  // Push PC + 2 to stack;
-  pushStack(cpu, cpu->PC + 2);
-  // Push Processor Status to stack with I flag set to 1
-  pushStack(cpu, cpu->P | 0x04);
-  // Sets PC to be equal to FFFE and FFF0
-  cpu->PC = cpu->Memory[0xFFFE];
-}
-
 // Note: This addressing mode is ZeroPage, hence why it only need 2 bytes
 // 0x01, ORA(oper,X), NZ, 2 bytes, 6 cycles
 void orAIndirectX(CPU *cpu) {
@@ -211,18 +201,6 @@ void orAZeroPage(CPU *cpu) {
   cpu->A = result;
 }
 
-// 0x06, ASL oper, NZC, 2 bytes, 5 cycles
-void arithmeticShiftLeftZeroPage(CPU *cpu) {
-  uint8_t oper = fetchInstructionByte(cpu);
-  uint8_t memValue = readBus(cpu, (uint16_t)oper);
-  // Shift value and set it in ZeroPage
-  uint8_t result = memValue << 1;
-  setZeroFlagIfZero(cpu, result);
-  setNegativeFlagIfNegative(cpu, result);
-  setOverflowFlagIfOverflow(cpu, memValue, result);
-  cpu->Memory[oper] = result;
-}
-
 // 0x08, PHP, -, 1 byte, 3 cycles
 void pushProcessorStatusOnStack(CPU *cpu) {
   // Set B Flag and Pin 5 to 1 before pushing
@@ -239,18 +217,6 @@ void orAImmediate(CPU *cpu) {
   cpu->A = result;
 }
 
-// 0x0A, ASL, NZC, 1 byte, 2 cycles
-void arithmeticShiftLeftAccumulator(CPU *cpu) {
-  // Set Carry Flag
-  if ((cpu->A & 0x80) == 0x80) {
-    cpu->P = cpu->P | 0x01;
-  }
-  uint8_t result = cpu->A << 1;
-  setZeroFlagIfZero(cpu, result);
-  setNegativeFlagIfNegative(cpu, result);
-  cpu->A = result;
-}
-
 // 0x0D, ORA oper, NZ, 3 bytes, 4 cycles
 void orAAbsolute(CPU *cpu) {
   uint8_t ll = fetchInstructionByte(cpu);
@@ -261,27 +227,6 @@ void orAAbsolute(CPU *cpu) {
   setZeroFlagIfZero(cpu, result);
   setNegativeFlagIfNegative(cpu, result);
   cpu->A = result;
-}
-
-// 0x0E, ASL oper, NZC, 3 bytes, 6 cycles
-void arithmeticShiftLeftAbsolute(CPU *cpu) {
-  uint8_t ll = fetchInstructionByte(cpu);
-  uint8_t hh = fetchInstructionByte(cpu);
-  uint16_t address = (uint16_t)hh << 8 | ll;
-  uint8_t memValue = readBus(cpu, address);
-  setCarryFlagConditionally(cpu, (memValue & 0x80) == 0x80);
-  uint8_t result = memValue << 1;
-  setZeroFlagIfZero(cpu, result);
-  setNegativeFlagIfNegative(cpu, result);
-  cpu->Memory[address] = result;
-}
-
-// 0x10, BPL oper, -, 2 bytes, 2 cycles
-void branchOnPlusRelative(CPU *cpu) {
-  uint8_t oper = fetchInstructionByte(cpu);
-  if ((cpu->P & 0x80) != 0x80) {
-    cpu->PC = cpu->PC + oper;
-  }
 }
 
 // 0x11, ORA (oper),Y, NZ, 2 bytes, 5 cycles
@@ -305,17 +250,6 @@ void orAZeroPageX(CPU *cpu) {
   setZeroFlagIfZero(cpu, result);
   setNegativeFlagIfNegative(cpu, result);
   cpu->A = result;
-}
-
-// 0x16, ASL oper,X, NZC, 2 bytes, 6 cycles
-void arithmeticShiftLeftZeroPageX(CPU *cpu) {
-  uint8_t oper = fetchInstructionByte(cpu);
-  uint8_t effectiveAddress = oper + cpu->X;
-  uint8_t value = readBus(cpu, effectiveAddress);
-  uint8_t result = value << 1;
-  setZeroFlagIfZero(cpu, result);
-  setNegativeFlagIfNegative(cpu, result);
-  cpu->Memory[effectiveAddress] = result;
 }
 
 // 0x18, CLC, -, 1 byte, 2 cycles
@@ -350,21 +284,6 @@ void orAAbsoluteX(CPU *cpu) {
   cpu->A = result;
 }
 
-// 0x1E, ASL oper,X, NZC, 3 bytes, 7 cycles
-void arithmeticShiftLeftAbsoluteX(CPU *cpu) {
-  uint8_t ll = fetchInstructionByte(cpu);
-  uint8_t hh = fetchInstructionByte(cpu);
-  uint16_t baseAddress = (uint16_t)hh << 8 | ll;
-  uint8_t offset = readBus(cpu, cpu->X);
-  uint16_t effectiveAddress = baseAddress + offset;
-  uint8_t memValue = readBus(cpu, effectiveAddress);
-  uint8_t result = memValue << 1;
-  setCarryFlagConditionally(cpu, (memValue & 0x80) == 0x80);
-  setZeroFlagIfZero(cpu, result);
-  setNegativeFlagIfNegative(cpu, result);
-  cpu->Memory[effectiveAddress] = result;
-}
-
 // 0x20, JSR oper, -, 3 bytes, 6 cycles
 void jumpSubRoutineAbsolute(CPU *cpu) {
   uint8_t ll = fetchInstructionByte(cpu);
@@ -372,17 +291,6 @@ void jumpSubRoutineAbsolute(CPU *cpu) {
   uint16_t effectiveAddress = (uint16_t)hh << 8 | ll;
   pushStack(cpu, cpu->PC + 2);
   cpu->PC = effectiveAddress;
-}
-
-// 0x21, AND (oper, X), NZ, 2 bytes, 6 cycles
-void andIndirectX(CPU *cpu) {
-  uint8_t oper = fetchInstructionByte(cpu);
-  uint16_t firstAddress = oper + cpu->X;
-  uint16_t effectiveAddress = readBus(cpu, firstAddress);
-  uint8_t result = cpu->A | cpu->Memory[effectiveAddress];
-  setZeroFlagIfZero(cpu, result);
-  setNegativeFlagIfNegative(cpu, result);
-  cpu->A = result;
 }
 
 // ADC Add Memory to Accumulator with Carry
@@ -447,6 +355,116 @@ void addWithCarryIndirectY(CPU *cpu) {
   addWithCarry(cpu, oper);
 }
 
+// AND Memory with Accumulator
+// NZCIDV
+// ++----
+
+void andMemoryWithAccumulator(CPU *cpu, uint8_t oper) {
+  uint8_t result = cpu->A | oper;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->A = result;
+}
+
+// 0x29, AND #oper, 2 bytes, 2 cycles
+void andImmediate(CPU *cpu) {
+  uint8_t oper = fetchPreIndexedIndirectX(cpu);
+  andMemoryWithAccumulator(cpu, oper);
+}
+
+void andZeroPage(CPU *cpu) {
+  uint8_t oper = fetchZeroPage(cpu);
+  andMemoryWithAccumulator(cpu, oper);
+}
+
+void andZeroPageX(CPU *cpu) {
+  uint8_t oper = fetchZeroPageX(cpu);
+  andMemoryWithAccumulator(cpu, oper);
+}
+
+void andAbsolute(CPU *cpu) {
+  uint8_t oper = fetchAbsolute(cpu);
+  andMemoryWithAccumulator(cpu, oper);
+}
+
+// 0x21, AND (oper, X), 2 bytes, 6 cycles
+void andIndirectX(CPU *cpu) {
+  uint8_t oper = fetchPreIndexedIndirectX(cpu);
+  andMemoryWithAccumulator(cpu, oper);
+}
+
+void andIndirectY(CPU *cpu) {
+  uint8_t oper = fetchPostIndexedIndirectY(cpu);
+  andMemoryWithAccumulator(cpu, oper);
+}
+
+// ASL Shift Left One Bit (Memory or Accumulator
+//
+void arithmeticShiftLeft(CPU *cpu, uint8_t oper) {
+  uint8_t result = oper << 1;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  setOverflowFlagIfOverflow(cpu, oper, result);
+  cpu->Memory[oper] = result;
+}
+
+// 0x0A, ASL, NZC, 1 byte, 2 cycles
+void arithmeticShiftLeftAccumulator(CPU *cpu) {
+  setCarryFlagConditionally(cpu, (cpu->A & 0x80) == 0x80);
+  uint8_t result = cpu->A << 1;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->A = result;
+}
+
+// 0x06, ASL oper, NZC, 2 bytes, 5 cycles
+void arithmeticShiftLeftZeroPage(CPU *cpu) {
+  uint8_t oper = fetchInstructionByte(cpu);
+  arithmeticShiftLeft(cpu, oper);
+}
+
+// 0x16, ASL oper,X, NZC, 2 bytes, 6 cycles
+void arithmeticShiftLeftZeroPageX(CPU *cpu) {
+  uint8_t oper = fetchZeroPageX(cpu);
+  arithmeticShiftLeft(cpu, oper);
+}
+
+// 0x0E, ASL oper, NZC, 3 bytes, 6 cycles
+void arithmeticShiftLeftAbsolute(CPU *cpu) {
+  uint8_t oper = fetchAbsolute(cpu);
+  arithmeticShiftLeft(cpu, oper);
+}
+
+// 0x1E, ASL oper,X, NZC, 3 bytes, 7 cycles
+void arithmeticShiftLeftAbsoluteX(CPU *cpu) {
+  uint8_t oper = fetchAbsoluteX(cpu);
+  arithmeticShiftLeft(cpu, oper);
+}
+
+// BCC Branch on Carry Clear
+void branchOnClearCarryRelative(CPU *cpu) {
+  uint8_t address = fetchInstructionByte(cpu);
+  if ((cpu->P & 0x01) == 0x00) {
+    cpu->P = cpu->P + address;
+  }
+}
+
+// BCS Branch on Carry Set
+void branchOnCarrySetRelative(CPU *cpu) {
+  uint8_t address = fetchInstructionByte(cpu);
+  if ((cpu->P & 0x01) == 0x01) {
+    cpu->P = cpu->P + address;
+  }
+}
+
+// BEQ Branch on Result Zero
+void branchOnEqualRelative(CPU *cpu) {
+  uint8_t address = fetchInstructionByte(cpu);
+  if ((cpu->P & 0x02) == 0x02) {
+    cpu->P = cpu->P + address;
+  }
+}
+
 // BIT Test
 
 // 0x24, BIT oper, Z, 2 bytes, 3 cycles
@@ -467,6 +485,61 @@ void bitTestAbsolute(CPU *cpu) {
   uint8_t result = cpu->P | 0xC0 & nvBits;
   setZeroFlagIfZero(cpu, result);
   cpu->P = result;
+}
+
+// BMI Branch on Result Minus
+// 0x30
+void branchOnMinusRelative(CPU *cpu) {
+  uint8_t address = fetchInstructionByte(cpu);
+  if ((cpu->P & 0x80) == 0x80) {
+    cpu->P = cpu->P + address;
+  }
+}
+
+// BNE Branch on Result not Zero
+// 0xD0
+void branchOnNotEqualRelative(CPU *cpu) {
+  uint8_t address = fetchInstructionByte(cpu);
+  if ((cpu->P & 0x02) == 0x00) {
+    cpu->P = cpu->P + address;
+  }
+}
+
+// BPL Branch on Result Plus
+// 0x10, BPL oper, -, 2 bytes, 2 cycles
+void branchOnPlusRelative(CPU *cpu) {
+  uint8_t address = fetchInstructionByte(cpu);
+  if ((cpu->P & 0x80) == 0x00) {
+    cpu->P = cpu->P + address;
+  }
+}
+
+// 0x00, BRK, I, 1 byte, 7 cycles
+void forceBreak(CPU *cpu) {
+  // Push PC + 2 to stack;
+  pushStack(cpu, cpu->PC + 2);
+  // Push Processor Status to stack with I flag set to 1
+  pushStack(cpu, cpu->P | 0x04);
+  // Sets PC to be equal to FFFE and FFF0
+  cpu->PC = cpu->Memory[0xFFFE];
+}
+
+// BVC Branch on Overflow Clear
+// 0x50
+void branchOnOverflowSetRelative(CPU *cpu) {
+  uint8_t address = fetchInstructionByte(cpu);
+  if ((cpu->P & 0x40) == 0x00) {
+    cpu->P = cpu->P + address;
+  }
+}
+
+// BVS Branch on Overflow Set
+// 0x70
+void branchOnOverflowClearRelative(CPU *cpu) {
+  uint8_t address = fetchInstructionByte(cpu);
+  if ((cpu->P & 0x40) == 0x01) {
+    cpu->P = cpu->P + address;
+  }
 }
 
 void executeInstruction(CPU *cpu) {
@@ -575,7 +648,7 @@ void executeInstruction(CPU *cpu) {
     // rotateLeftAbsolute(cpu);
     break;
   case (0x30):
-    // branchOnMinusRelative(cpu);
+    branchOnMinusRelative(cpu);
     break;
   case (0x31):
     // andIndirectY(cpu);
@@ -629,7 +702,7 @@ void executeInstruction(CPU *cpu) {
     // logisticalShiftRightAbsolute(cpu);
     break;
   case (0x50):
-    // branchOnOverflowClearRelative(cpu);
+    branchOnOverflowClearRelative(cpu);
     break;
   case (0x51):
     // exclusiveOrIndirectY(cpu);
@@ -656,10 +729,10 @@ void executeInstruction(CPU *cpu) {
     // returnFromSubroutine(cpu);
     break;
   case (0x61):
-    // addWithCarryIndirectX(cpu);
+    addWithCarryIndirectX(cpu);
     break;
   case (0x65):
-    // addWithCarryZeroPage(cpu);
+    addWithCarryZeroPage(cpu);
     break;
   case (0x66):
     // rotateRightZeroPage(cpu);
@@ -677,19 +750,19 @@ void executeInstruction(CPU *cpu) {
     // jumpIndirect(cpu);
     break;
   case (0x6D):
-    // addWithCarryAbsolute(cpu);
+    addWithCarryAbsolute(cpu);
     break;
   case (0x6E):
     // rotateRightAbsolute(cpu);
     break;
   case (0x70):
-    // branchonOverflowSetRelative(cpu);
+    branchonOverflowSetRelative(cpu);
     break;
   case (0x71):
-    // addWithCarryIndirectY(cpu);
+    addWithCarryIndirectY(cpu);
     break;
   case (0x75):
-    // addWithCarryZeroPageX(cpu);
+    addWithCarryZeroPageX(cpu);
     break;
   case (0x76):
     // rotateRightZeroPageX(cpu);
@@ -698,10 +771,10 @@ void executeInstruction(CPU *cpu) {
     // setInterruptDisable(cpu);
     break;
   case (0x79):
-    // addWithCarryAbsoluteY(cpu);
+    addWithCarryAbsoluteY(cpu);
     break;
   case (0x7D):
-    // addWithCarryAbsoluteX(cpu);
+    addWithCarryAbsoluteX(cpu);
     break;
   case (0x7E):
     // rotateRightAbsoluteX(cpu);
@@ -863,7 +936,7 @@ void executeInstruction(CPU *cpu) {
     // decrementAbsolute(cpu);
     break;
   case (0xD0):
-    // branchOnNotEqualRelative(cpu);
+    branchOnNotEqualRelative(cpu);
     break;
   case (0xD1):
     // compareWithAccumulatorIndirectY(cpu);
@@ -920,7 +993,7 @@ void executeInstruction(CPU *cpu) {
     // incrementAbsolute(cpu);
     break;
   case (0xF0):
-    // branchOnEqualRelative(cpu);
+    branchOnEqualRelative(cpu);
     break;
   case (0xF1):
     // subtractWithCarryIndirectY(cpu);
