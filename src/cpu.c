@@ -252,9 +252,6 @@ void orAZeroPageX(CPU *cpu) {
   cpu->A = result;
 }
 
-// 0x18, CLC, -, 1 byte, 2 cycles
-void clearCarry(CPU *cpu) { cpu->P = cpu->P & 0xFE; }
-
 // 0x19, ORA oper,Y, NZ, 3 bytes, 4* cycles
 void orAAbsoluteY(CPU *cpu) {
   uint8_t ll = fetchInstructionByte(cpu);
@@ -541,6 +538,23 @@ void branchOnOverflowClearRelative(CPU *cpu) {
     cpu->P = cpu->P + address;
   }
 }
+
+// CLC Clear Carry Flag
+// 0x18, CLC, -, 1 byte, 2 cycles
+void clearCarry(CPU *cpu) { cpu->P = cpu->P & 0xFE; }
+
+// CLD Cleaer Decimal Mode
+// 0xD8
+void clearDecimal(CPU *cpu) { cpu->P = cpu->P & 0xF7; }
+
+// CLI Clear Interrupt Disable BIt
+// 0x58
+void clearInterruptDisable(CPU *cpu) { cpu->P = cpu->P & 0xFB; }
+
+// CLV Clear Overflow Flag
+// 0xB8
+void clearOverflow(CPU *cpu) { cpu->P = cpu->P & 0xBF; }
+
 
 void executeInstruction(CPU *cpu) {
   uint8_t prAddr = readBus(cpu, cpu->PC);
