@@ -1,5 +1,5 @@
-// This file is meant to hold all the necessary code to emulate the Ricoh 2A03
-// CPU (based on the 6502 CPU).
+// This file is meant to hold all the necessary code to emulate the Ricoh 2A03 /
+// 6502 Processor CPU (based on the 6502 CPU).
 #include "cpu.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -75,10 +75,14 @@ uint8_t fetchInstructionByte(CPU *cpu) {
 
 uint8_t fetchImmediate(CPU *cpu) { return fetchInstructionByte(cpu); }
 
-uint16_t fetchAbsolute(CPU *cpu) {
+uint16_t fetchAbsoluteAddress(CPU *cpu) {
   uint8_t ll = fetchInstructionByte(cpu);
   uint8_t hh = fetchInstructionByte(cpu);
-  uint16_t address = (uint16_t)hh << 8 | ll;
+  return (uint16_t)hh << 8 | ll;
+}
+
+uint8_t fetchAbsolute(CPU *cpu) {
+  uint16_t address = fetchAbsoluteAddress(cpu);
   return readBus(cpu, address);
 }
 
@@ -814,7 +818,7 @@ void jump(CPU *cpu, uint16_t address) { cpu->PC = address; }
 
 // 0x4C
 void jumpAbsolute(CPU *cpu) {
-  uint16_t address = fetchAbsolute(cpu);
+  uint16_t address = fetchAbsoluteAddress(cpu);
   jump(cpu, address);
 }
 
@@ -828,8 +832,137 @@ void jumpIndirect(CPU *cpu) {
 // 0x20, JSR oper, -, 3 bytes, 6 cycles
 void jumpSubRoutineAbsolute(CPU *cpu) {
   pushStack(cpu, cpu->PC + 2);
-  uint16_t address = fetchAbsolute(cpu);
+  uint16_t address = fetchAbsoluteAddress(cpu);
   cpu->PC = address;
+}
+
+// LDA Load Accumulator with Memory
+void loadAccumulator(CPU *cpu, uint8_t value) {
+  setZeroFlagIfZero(cpu, value);
+  setNegativeFlagIfNegative(cpu, value);
+  cpu->A = value;
+}
+
+// 0xA9
+void loadAccumulatorImmediate(CPU *cpu) {
+  uint8_t value = fetchImmediate(cpu);
+  loadAccumulator(cpu, value);
+}
+
+// 0xA5
+void loadAccumulatorZeroPage(CPU *cpu) {
+  uint8_t value = fetchZeroPage(cpu);
+  loadAccumulator(cpu, value);
+}
+
+// 0xB5
+void loadAccumulatorZeroPageX(CPU *cpu) {
+  uint8_t value = fetchZeroPageX(cpu);
+  loadAccumulator(cpu, value);
+}
+
+// 0xAD
+void loadAccumulatorAbsolute(CPU *cpu) {
+  uint8_t value = fetchAbsolute(cpu);
+  loadAccumulator(cpu, value);
+}
+
+// 0xBD
+void loadAccumulatorAbsoluteX(CPU *cpu) {
+  uint8_t value = fetchAbsoluteX(cpu);
+  loadAccumulator(cpu, value);
+}
+
+// 0xB9
+void loadAccumulatorAbsoluteY(CPU *cpu) {
+  uint8_t value = fetchAbsoluteY(cpu);
+  loadAccumulator(cpu, value);
+}
+
+// 0xA1
+void loadAccumulatorIndirectX(CPU *cpu) {
+  uint8_t value = fetchPreIndexedIndirectX(cpu);
+  loadAccumulator(cpu, value);
+}
+
+// 0xB1
+void loadAccumulatorIndirectY(CPU *cpu) {
+  uint8_t value = fetchPostIndexedIndirectY(cpu);
+  loadAccumulator(cpu, value);
+}
+
+// LDX Load Index X with Memory
+void loadX(CPU *cpu, uint8_t value) {
+  setZeroFlagIfZero(cpu, value);
+  setNegativeFlagIfNegative(cpu, value);
+  cpu->X = value;
+}
+
+// 0xA2
+void loadXImmediate(CPU *cpu) {
+  uint8_t value = fetchImmediate(cpu);
+  loadX(cpu, value);
+}
+
+// 0xA6
+void loadXZeroPage(CPU *cpu) {
+  uint8_t value = fetchZeroPage(cpu);
+  loadX(cpu, value);
+}
+
+// 0xB6
+void loadXZeroPageY(CPU *cpu) {
+  uint8_t value = fetchZeroPageY(cpu);
+  loadX(cpu, value);
+}
+
+// 0xAE
+void loadXAbsolute(CPU *cpu) {
+  uint8_t value = fetchAbsolute(cpu);
+  loadX(cpu, value);
+}
+
+// 0xBE
+void loadXAbsoluteY(CPU *cpu) {
+  uint8_t value = fetchAbsoluteY(cpu);
+  loadX(cpu, value);
+}
+
+// LDY Load Index Y with Memory
+void loadY(CPU *cpu, uint8_t value) {
+  setZeroFlagIfZero(cpu, value);
+  setNegativeFlagIfNegative(cpu, value);
+  cpu->Y = value;
+}
+
+// 0xA0
+void loadYImmediate(CPU *cpu) {
+  uint8_t value = fetchImmediate(cpu);
+  loadY(cpu, value);
+}
+
+// 0xA4
+void loadYZeroPage(CPU *cpu) {
+  uint8_t value = fetchZeroPage(cpu);
+  loadY(cpu, value);
+}
+
+// 0xB4
+void loadYZeroPageY(CPU *cpu) {
+  uint8_t value = fetchZeroPageY(cpu);
+  loadY(cpu, value);
+}
+
+// 0xAC
+void loadYAbsolute(CPU *cpu) {
+  uint8_t value = fetchAbsolute(cpu);
+  loadY(cpu, value);
+}
+
+// 0xBC
+void loadYAbsoluteY(CPU *cpu) {
+  uint8_t value = fetchAbsoluteY(cpu);
+  loadY(cpu, value);
 }
 
 void executeInstruction(CPU *cpu) {
