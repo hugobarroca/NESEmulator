@@ -554,7 +554,113 @@ void clearInterruptDisable(CPU *cpu) { cpu->P = cpu->P & 0xFB; }
 // CLV Clear Overflow Flag
 // 0xB8
 void clearOverflow(CPU *cpu) { cpu->P = cpu->P & 0xBF; }
+// CMP Compare Memory with Accumulator
+void compareWithAccumulator(CPU *cpu, uint8_t memory) {
+  uint8_t result = cpu->A - memory;
+  setNegativeFlagIfNegative(cpu, result);
+  setZeroFlagIfZero(cpu, result);
+  setCarryFlagConditionally(cpu, memory >= cpu->A);
+}
 
+// 0xC9
+void compareWithAccumulatorImmediate(CPU *cpu) {
+  uint8_t oper = fetchImmediate(cpu);
+  compareWithAccumulator(cpu, oper);
+}
+
+// 0xC5
+void compareWithAccumulatorZeroPage(CPU *cpu) {
+  uint8_t oper = fetchZeroPage(cpu);
+  compareWithAccumulator(cpu, oper);
+}
+
+// 0xD5
+void compareWithAccumulatorZeroPageX(CPU *cpu) {
+  uint8_t oper = fetchZeroPageX(cpu);
+  compareWithAccumulator(cpu, oper);
+}
+
+// 0xCD
+void compareWithAccumulatorAbsolute(CPU *cpu) {
+  uint8_t oper = fetchAbsolute(cpu);
+  compareWithAccumulator(cpu, oper);
+}
+
+// 0xDD
+void compareWithAccumulatorAbsoluteX(CPU *cpu) {
+  uint8_t oper = fetchAbsoluteX(cpu);
+  compareWithAccumulator(cpu, oper);
+}
+
+// 0xD9
+void compareWithAccumulatorAbsoluteY(CPU *cpu) {
+  uint8_t oper = fetchAbsoluteY(cpu);
+  compareWithAccumulator(cpu, oper);
+}
+
+// 0xC1
+void compareWithAccumulatorIndirectX(CPU *cpu) {
+  uint8_t oper = fetchPreIndexedIndirectX(cpu);
+  compareWithAccumulator(cpu, oper);
+}
+
+// 0xD1
+void compareWithAccumulatorIndirectY(CPU *cpu) {
+  uint8_t oper = fetchPostIndexedIndirectY(cpu);
+  compareWithAccumulator(cpu, oper);
+}
+
+// CPX Compare Memory and Index X
+void compareWithX(CPU *cpu, uint8_t memory) {
+  uint8_t result = cpu->X - memory;
+  setNegativeFlagIfNegative(cpu, result);
+  setZeroFlagIfZero(cpu, result);
+  setCarryFlagConditionally(cpu, memory >= cpu->X);
+}
+
+// 0xE0
+void compareWithXImmediate(CPU *cpu, uint8_t memory) {
+  uint8_t oper = fetchImmediate(cpu);
+  compareWithX(cpu, oper);
+}
+
+// 0xE4
+void compareWithXZeroPage(CPU *cpu, uint8_t memory) {
+  uint8_t oper = fetchZeroPage(cpu);
+  compareWithX(cpu, oper);
+}
+
+// 0xEC
+void compareWithXAbsolute(CPU *cpu, uint8_t memory) {
+  uint8_t oper = fetchAbsolute(cpu);
+  compareWithX(cpu, oper);
+}
+
+// CPY Compare Memory and Index Y
+void compareWithY(CPU *cpu, uint8_t memory) {
+  uint8_t result = cpu->Y - memory;
+  setNegativeFlagIfNegative(cpu, result);
+  setZeroFlagIfZero(cpu, result);
+  setCarryFlagConditionally(cpu, memory >= cpu->Y);
+}
+
+// 0xC0
+void compareWithYImmediate(CPU *cpu, uint8_t memory) {
+  uint8_t oper = fetchImmediate(cpu);
+  compareWithY(cpu, oper);
+}
+
+// 0xC4
+void compareWithYZeroPage(CPU *cpu, uint8_t memory) {
+  uint8_t oper = fetchZeroPage(cpu);
+  compareWithY(cpu, oper);
+}
+
+// 0xCC
+void compareWithYAbsolute(CPU *cpu, uint8_t memory) {
+  uint8_t oper = fetchAbsolute(cpu);
+  compareWithY(cpu, oper);
+}
 
 void executeInstruction(CPU *cpu) {
   uint8_t prAddr = readBus(cpu, cpu->PC);
