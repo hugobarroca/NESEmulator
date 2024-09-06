@@ -75,7 +75,7 @@ uint8_t fetchInstructionByte(CPU *cpu) {
 
 uint8_t fetchImmediate(CPU *cpu) { return fetchInstructionByte(cpu); }
 
-uint8_t fetchAbsolute(CPU *cpu) {
+uint16_t fetchAbsolute(CPU *cpu) {
   uint8_t ll = fetchInstructionByte(cpu);
   uint8_t hh = fetchInstructionByte(cpu);
   uint16_t address = (uint16_t)hh << 8 | ll;
@@ -116,7 +116,7 @@ uint8_t fetchZeroPageY(CPU *cpu) {
   return readBus(cpu, (uint16_t)instruction);
 }
 
-uint8_t fetchIndirect(CPU *cpu) {
+uint16_t fetchIndirect(CPU *cpu) {
   uint8_t ll = fetchInstructionByte(cpu);
   uint8_t hh = fetchInstructionByte(cpu);
   uint16_t instructionAddress = (uint16_t)hh << 8 | ll;
@@ -279,15 +279,6 @@ void orAAbsoluteX(CPU *cpu) {
   setZeroFlagIfZero(cpu, result);
   setNegativeFlagIfNegative(cpu, result);
   cpu->A = result;
-}
-
-// 0x20, JSR oper, -, 3 bytes, 6 cycles
-void jumpSubRoutineAbsolute(CPU *cpu) {
-  uint8_t ll = fetchInstructionByte(cpu);
-  uint8_t hh = fetchInstructionByte(cpu);
-  uint16_t effectiveAddress = (uint16_t)hh << 8 | ll;
-  pushStack(cpu, cpu->PC + 2);
-  cpu->PC = effectiveAddress;
 }
 
 // ADC Add Memory to Accumulator with Carry
@@ -660,6 +651,185 @@ void compareWithYZeroPage(CPU *cpu, uint8_t memory) {
 void compareWithYAbsolute(CPU *cpu, uint8_t memory) {
   uint8_t oper = fetchAbsolute(cpu);
   compareWithY(cpu, oper);
+}
+
+// DEC Decrement Memory by One
+void decrement(CPU *cpu, uint8_t memAddr) {
+  uint8_t result = cpu->Memory[memAddr] - 1;
+  setNegativeFlagIfNegative(cpu, result);
+  setZeroFlagIfZero(cpu, result);
+  cpu->Memory[memAddr] = result;
+}
+
+// 0xC6
+void decrementZeroPage(CPU *cpu) {
+  uint8_t memAddr = fetchZeroPage(cpu);
+  decrement(cpu, memAddr);
+}
+
+// 0xD6
+void decrementZeroPageX(CPU *cpu) {
+  uint8_t memAddr = fetchZeroPageX(cpu);
+  decrement(cpu, memAddr);
+}
+
+// 0xCE
+void decrementAbsolute(CPU *cpu) {
+  uint8_t memAddr = fetchAbsolute(cpu);
+  decrement(cpu, memAddr);
+}
+
+// 0xDE
+void decrementAbsoluteX(CPU *cpu) {
+  uint8_t memAddr = fetchAbsoluteX(cpu);
+  decrement(cpu, memAddr);
+}
+
+// DEX Decrement Index X by One
+// 0xCA
+void decrementX(CPU *cpu) {
+  uint8_t result = cpu->X - 1;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->X = result;
+}
+
+// DEY Decrement Index Y by One
+// 0x88
+void decrementY(CPU *cpu) {
+  uint8_t result = cpu->Y - 1;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->Y = result;
+}
+
+// EOR Exclusive-Or Memory with Accumulator
+void exclusiveOr(CPU *cpu, uint8_t memValue) {
+  uint8_t result = cpu->A ^ memValue;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->A = result;
+}
+
+// 0x49
+void exclusiveOrImmediate(CPU *cpu) {
+  uint8_t oper = fetchImmediate(cpu);
+  exclusiveOr(cpu, oper);
+}
+
+// 0x45
+void exclusiveOrZeroPage(CPU *cpu) {
+  uint8_t oper = fetchZeroPage(cpu);
+  exclusiveOr(cpu, oper);
+}
+
+// 0x55
+void exclusiveOrZeroPageX(CPU *cpu) {
+  uint8_t oper = fetchZeroPageX(cpu);
+  exclusiveOr(cpu, oper);
+}
+
+// 0x4D
+void exclusiveOrAbsolute(CPU *cpu) {
+  uint8_t oper = fetchAbsolute(cpu);
+  exclusiveOr(cpu, oper);
+}
+
+// 0x5D
+void exclusiveOrAbsoluteX(CPU *cpu) {
+  uint8_t oper = fetchAbsoluteX(cpu);
+  exclusiveOr(cpu, oper);
+}
+
+// 0x59
+void exclusiveOrAbsoluteY(CPU *cpu) {
+  uint8_t oper = fetchAbsoluteX(cpu);
+  exclusiveOr(cpu, oper);
+}
+
+// 0x41
+void exclusiveOrIndirectX(CPU *cpu) {
+  uint8_t oper = fetchPreIndexedIndirectX(cpu);
+  exclusiveOr(cpu, oper);
+}
+
+// 0x51
+void exclusiveOrIndirectY(CPU *cpu) {
+  uint8_t oper = fetchPostIndexedIndirectY(cpu);
+  exclusiveOr(cpu, oper);
+}
+
+// INC Increment Memory by One
+void increment(CPU *cpu, uint8_t memAddr) {
+  uint8_t result = cpu->Memory[memAddr] + 1;
+  setNegativeFlagIfNegative(cpu, result);
+  setZeroFlagIfZero(cpu, result);
+  cpu->Memory[memAddr] = result;
+}
+
+// 0xE6
+void incrementZeroPage(CPU *cpu) {
+  uint8_t memAddr = fetchZeroPage(cpu);
+  increment(cpu, memAddr);
+}
+
+// 0xF6
+void incrementZeroPageX(CPU *cpu) {
+  uint8_t memAddr = fetchZeroPageX(cpu);
+  increment(cpu, memAddr);
+}
+
+// 0xEE
+void incrementAbsolute(CPU *cpu) {
+  uint8_t memAddr = fetchAbsolute(cpu);
+  increment(cpu, memAddr);
+}
+
+// 0xFE
+void incrementAbsoluteX(CPU *cpu) {
+  uint8_t memAddr = fetchAbsoluteX(cpu);
+  increment(cpu, memAddr);
+}
+
+// INX Increment Index X by One
+// 0xE8
+void incrementX(CPU *cpu) {
+  uint8_t result = cpu->X + 1;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->X = result;
+}
+
+// INY Increment Index Y by One
+// 0xC8
+void incrementY(CPU *cpu) {
+  uint8_t result = cpu->Y + 1;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->Y = result;
+}
+
+// JMP Jump to new Location
+void jump(CPU *cpu, uint16_t address) { cpu->PC = address; }
+
+// 0x4C
+void jumpAbsolute(CPU *cpu) {
+  uint16_t address = fetchAbsolute(cpu);
+  jump(cpu, address);
+}
+
+// 0x6C
+void jumpIndirect(CPU *cpu) {
+  uint16_t address = fetchIndirect(cpu);
+  jump(cpu, address);
+}
+
+// JSR Jump to new Location Saving Return Address
+// 0x20, JSR oper, -, 3 bytes, 6 cycles
+void jumpSubRoutineAbsolute(CPU *cpu) {
+  pushStack(cpu, cpu->PC + 2);
+  uint16_t address = fetchAbsolute(cpu);
+  cpu->PC = address;
 }
 
 void executeInstruction(CPU *cpu) {
