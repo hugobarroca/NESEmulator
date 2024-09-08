@@ -1284,6 +1284,60 @@ void storeYAbsolute(CPU *cpu) {
   cpu->Memory[memAddr] = cpu->Y;
 }
 
+// TAX Transfer Accumulator to Index X
+// 0xAA
+void transferAccumulatorToX(CPU *cpu) {
+  uint8_t result = cpu->X;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->X = result;
+}
+
+// TAY Transfer Accumulator to Index Y
+// 0xA8
+void transferAccumulatorToY(CPU *cpu) {
+  uint8_t result = cpu->Y;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->Y = result;
+}
+
+// TSX Transfer Stack Pointer to Index X
+// 0xBA
+void transferStackPointerToX(CPU *cpu) {
+  uint8_t result = cpu->S;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->X = result;
+}
+
+// TXA Transfer Index X to Accumulator 
+// 0x8A
+void transferXToAccumulator(CPU *cpu) {
+  uint8_t result = cpu->X;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->A = result;
+}
+
+// TXS Trasnfer Index X to Stack Pointer
+// 0x9A
+void transferXToStackPointer(CPU *cpu) {
+  uint8_t result = cpu->X;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->S = result;
+}
+
+// TYA Transfer Index Y to Accumulator
+// 0x98
+void transferYToAccumulator(CPU *cpu) {
+  uint8_t result = cpu->Y;
+  setZeroFlagIfZero(cpu, result);
+  setNegativeFlagIfNegative(cpu, result);
+  cpu->A = result;
+}
+
 void executeInstruction(CPU *cpu) {
   uint8_t prAddr = readBus(cpu, cpu->PC);
   uint8_t instruction = readBus(cpu, prAddr);
