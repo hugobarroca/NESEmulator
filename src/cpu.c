@@ -1,6 +1,7 @@
 // This file is meant to hold all the necessary code to emulate the Ricoh 2A03 /
 // 6502 Processor CPU (based on the 6502 CPU).
 #include "cpu.h"
+#include <cstdint>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -183,13 +184,6 @@ void setCarryFlagConditionally(CPU *cpu, bool condition) {
 uint8_t isCarryFlagSet(CPU *cpu) { return (cpu->P & 0x01) == 0x01; }
 
 // ------------- INSTRUCTIONS -------------
-
-// 0x08, PHP, -, 1 byte, 3 cycles
-void pushProcessorStatusOnStack(CPU *cpu) {
-  // Set B Flag and Pin 5 to 1 before pushing
-  cpu->P = cpu->P | 0x30; // 00110000
-  pushStack(cpu, cpu->P);
-}
 
 // ADC Add Memory to Accumulator with Carry
 // NZCIDV
@@ -990,6 +984,124 @@ void orAIndirectX(CPU *cpu) {
 void orAIndirectY(CPU *cpu) {
   uint8_t memValue = fetchPostIndexedIndirectY(cpu);
   uint8_t result = orA(cpu, memValue);
+  cpu->A = result;
+}
+
+// PHA Push Accumulator on Stack
+// 0x48
+void pushAccumulatorOntoStack(CPU *cpu) { pushStack(cpu, cpu->A); }
+
+// PHP Push Processor Status on Status
+// 0x08, PHP, -, 1 byte, 3 cycles
+void pushProcessorStatusOnStack(CPU *cpu) {
+  // Set B Flag and Pin 5 to 1 before pushing
+  cpu->P = cpu->P | 0x30; // 00110000
+  pushStack(cpu, cpu->P);
+}
+
+// PLA Pull Accumulator from Stack
+void pullAccumulatorFromStack(CPU *cpu) {
+  uint8_t stackValue = popStack(cpu);
+  setZeroFlagIfZero(cpu, stackValue);
+  setNegativeFlagIfNegative(cpu, stackValue);
+  cpu->A = stackValue;
+}
+
+// Pull Processor Stauts from Stack
+// 0x28
+void pullProcessorStatusFromStack(CPU *cpu) { cpu->P = popStack(cpu); }
+
+// ROL Rotate One Bit Left
+uint8_t rotateLeft(CPU *cpu, uint8_t value) {
+  uint8_t result;
+  if ((value | 0x7F) != value) {
+    cpu->P = cpu->P | 0x01;
+    result = (value << 1) + 1;
+  } else {
+    cpu->P = cpu->P & 0xFE;
+    result = value << 1;
+  }
+  return result;
+}
+
+// 0x2A
+void rotateLeftAccumulator(CPU *cpu) {
+  uint8_t result = rotateLeft(cpu, cpu->A);
+  cpu->A = result;
+}
+
+// 0x26
+void rotateLeftZeroPage(CPU *cpu) {
+  uint8_t memValue = fetchZeroPage(cpu);
+  uint8_t result = rotateLeft(cpu, memValue);
+  cpu->A = result;
+}
+
+// 0x36
+void rotateLeftZeroPageX(CPU *cpu) {
+  uint8_t memValue = fetchZeroPageX(cpu);
+  uint8_t result = rotateLeft(cpu, memValue);
+  cpu->A = result;
+}
+
+// 0x2E
+void rotateLeftAbsolute(CPU *cpu) {
+  uint8_t memValue = fetchAbsolute(cpu);
+  uint8_t result = rotateLeft(cpu, memValue);
+  cpu->A = result;
+}
+
+// 0x3E
+void rotateLeftAbsoluteX(CPU *cpu) {
+  uint8_t memValue = fetchAbsoluteX(cpu);
+  uint8_t result = rotateLeft(cpu, memValue);
+  cpu->A = result;
+}
+
+// ROR Rotate One Bit Right
+uint8_t rotateRight(CPU *cpu, uint8_t value) {
+  uint8_t result;
+  if ((value | 0x01) == value) { // If 0th bit is 1
+    cpu->P = cpu->P | 0x01;
+    result = (value >> 1) | 0x80;
+  } else {
+    cpu->P = cpu->P & 0xFE;
+    result = value >> 1 & 0x7F;
+  }
+  return result;
+}
+
+// 0x6A
+void rotateRightAccumulator(CPU *cpu) {
+  uint8_t result = rotateRight(cpu, cpu->A);
+  cpu->A = result;
+}
+
+// 0x66
+void rotateRightZeroPage(CPU *cpu) {
+  uint8_t memValue = fetchZeroPage(cpu);
+  uint8_t result = rotateRight(cpu, memValue);
+  cpu->A = result;
+}
+
+// 0x76
+void rotateRightZeroPageX(CPU *cpu) {
+  uint8_t memValue = fetchZeroPageX(cpu);
+  uint8_t result = rotateRight(cpu, memValue);
+  cpu->A = result;
+}
+
+// 0x6E
+void rotateRightAbsolute(CPU *cpu) {
+  uint8_t memValue = fetchAbsolute(cpu);
+  uint8_t result = rotateRight(cpu, memValue);
+  cpu->A = result;
+}
+
+// 0x7E
+void rotateRightAbsoluteX(CPU *cpu) {
+  uint8_t memValue = fetchAbsoluteX(cpu);
+  uint8_t result = rotateRight(cpu, memValue);
   cpu->A = result;
 }
 
