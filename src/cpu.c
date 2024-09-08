@@ -86,10 +86,15 @@ uint8_t fetchAbsolute(CPU *cpu) {
   return readBus(cpu, address);
 }
 
+uint16_t fetchZeroPageAddress(CPU *cpu) {
+  uint8_t result = readBus(cpu, cpu->PC);
+  return result;
+}
+
 uint8_t fetchZeroPage(CPU *cpu) {
   // Instruction is a ZeroPage memory address
-  uint8_t instruction = readBus(cpu, cpu->PC);
-  return readBus(cpu, (uint16_t)instruction);
+  uint16_t instruction = fetchZeroPageAddress(cpu);
+  return readBus(cpu, instruction);
 }
 
 uint8_t fetchAbsoluteX(CPU *cpu) {
@@ -965,6 +970,60 @@ void loadYAbsoluteY(CPU *cpu) {
   loadY(cpu, value);
 }
 
+// LSR Shift One Bit Right (Memory or Accumulator)
+uint8_t logisticalShiftRight(CPU *cpu, uint8_t value) {
+  uint8_t result = value >> 1;
+  // Reset N flag
+  cpu->P = cpu->P & 0x7F;
+  setZeroFlagIfZero(cpu, result);
+  // Set 0th bit to Carry
+  uint8_t zeroBit = value & 0x01;
+  if (zeroBit == 0x01) {
+    cpu->P = cpu->P | 0x01;
+  } else {
+    cpu->P = cpu->P & 0xFE;
+  }
+  return result;
+}
+
+// 0x4A
+void logisticalShiftRightAccumulator(CPU *cpu) {
+  uint8_t result = logisticalShiftRight(cpu, cpu->A);
+  cpu->A = result;
+}
+
+// 0x46
+void logisticalShiftRightZeroPage(CPU *cpu) {
+  uint16_t address = fetchZeroPageAddress(cpu);
+  uint8_t value = readBus(cpu, address);
+  uint8_t result = logisticalShiftRight(cpu, value);
+  cpu->Memory[address] = result;
+}
+
+// 0x56
+void logisticalShiftRightZeroPageX(CPU *cpu) {
+  uint16_t address = fetchZeroPageAddress(cpu) + cpu->X;
+  uint8_t value = readBus(cpu, address);
+  uint8_t result = logisticalShiftRight(cpu, value);
+  cpu->Memory[address] = result;
+}
+
+// 0x4E
+void logisticalShiftRightAbsolute(CPU *cpu) {
+  uint16_t address = fetchAbsoluteAddress(cpu);
+  uint8_t value = readBus(cpu, address);
+  uint8_t result = logisticalShiftRight(cpu, value);
+  cpu->Memory[address] = result;
+}
+
+// 0x5E
+void logisticalShiftRightAbsoluteX(CPU *cpu) {
+  uint16_t address = fetchAbsoluteAddress(cpu) + cpu->X;
+  uint8_t value = readBus(cpu, address);
+  uint8_t result = logisticalShiftRight(cpu, value);
+  cpu->Memory[address] = result;
+}
+
 void executeInstruction(CPU *cpu) {
   uint8_t prAddr = readBus(cpu, cpu->PC);
   uint8_t instruction = readBus(cpu, prAddr);
@@ -1179,7 +1238,7 @@ void executeInstruction(CPU *cpu) {
     // rotateRightAbsolute(cpu);
     break;
   case (0x70):
-    branchonOverflowSetRelative(cpu);
+    branchOnOverflowSetRelative(cpu);
     break;
   case (0x71):
     addWithCarryIndirectY(cpu);
