@@ -167,8 +167,9 @@ void setNegativeFlagIfNegative(CPU *cpu, uint8_t result) {
   }
 }
 
-void setOverflowFlagIfOverflow(CPU *cpu, uint8_t original, uint8_t result) {
-  if (result > original) {
+// Sets the overflow flag to 1 if original is smaller than the result
+void setOverflowFlagIfOverflow(CPU *cpu, uint8_t larger, uint8_t smaller) {
+  if (smaller > larger) {
     cpu->P = cpu->P | 0x40;
   }
 }
@@ -1103,6 +1104,83 @@ void rotateRightAbsoluteX(CPU *cpu) {
   uint8_t memValue = fetchAbsoluteX(cpu);
   uint8_t result = rotateRight(cpu, memValue);
   cpu->A = result;
+}
+
+// RTI Return from Interrupt
+// 0x40
+void returnFromInterrupt(CPU *cpu) {
+  cpu->P = popStack(cpu);
+  uint8_t pcl = popStack(cpu);
+  uint8_t pch = popStack(cpu);
+  cpu->PC = (pch << 8) + pcl;
+}
+
+// RTS Return from Subroutine
+// 0x60
+void returnFromSubroutine(CPU *cpu) {}
+
+// SBC Subtract Memory from Accumulator with Borrow
+uint8_t subtractWithCarry(CPU *cpu, uint8_t value) {
+  uint8_t result;
+  if (cpu->A > value) {
+    // No borrow
+    cpu->P = cpu->P | 0x01;
+  } else {
+    cpu->P = cpu->P & 0xFE;
+  }
+  result = cpu->A - value;
+  // Set overflow
+  setOverflowFlagIfOverflow(cpu, cpu->A, result);
+  setNegativeFlagIfNegative(cpu, result);
+  return result;
+}
+
+// 0xE9
+void subtractWithCarryImmediate(CPU *cpu) {
+  uint8_t memValue = fetchImmediate(cpu);
+  uint8_t result = subtractWithCarry(cpu, memValue);
+}
+
+// 0xE5
+void subtractWithCarryZeroPage(CPU *cpu) {
+  uint8_t memValue = fetchZeroPage(cpu);
+  uint8_t result = subtractWithCarry(cpu, memValue);
+}
+
+// 0xF5
+void subtractWithCarryZeroPageX(CPU *cpu) {
+  uint8_t memValue = fetchZeroPageX(cpu);
+  uint8_t result = subtractWithCarry(cpu, memValue);
+}
+
+// 0xED
+void subtractWithCarryAbsolute(CPU *cpu) {
+  uint8_t memValue = fetchAbsolute(cpu);
+  uint8_t result = subtractWithCarry(cpu, memValue);
+}
+
+// 0xFD
+void subtractWithCarryAbsoluteX(CPU *cpu) {
+  uint8_t memValue = fetchAbsoluteX(cpu);
+  uint8_t result = subtractWithCarry(cpu, memValue);
+}
+
+// 0xF9
+void subtractWithCarryAbsoluteY(CPU *cpu) {
+  uint8_t memValue = fetchAbsoluteY(cpu);
+  uint8_t result = subtractWithCarry(cpu, memValue);
+}
+
+// 0xE1
+void subtractWithCarryIndirectX(CPU *cpu) {
+  uint8_t memValue = fetchPreIndexedIndirectX(cpu);
+  uint8_t result = subtractWithCarry(cpu, memValue);
+}
+
+// 0xF1
+void subtractWithCarryIndirectY(CPU *cpu) {
+  uint8_t memValue = fetchPostIndexedIndirectY(cpu);
+  uint8_t result = subtractWithCarry(cpu, memValue);
 }
 
 void executeInstruction(CPU *cpu) {
