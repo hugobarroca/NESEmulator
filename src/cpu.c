@@ -126,7 +126,7 @@ uint8_t fetchZeroPageY(CPU *cpu) {
   return readBus(cpu, (uint16_t)instruction);
 }
 
-uint16_t fetchIndirect(CPU *cpu) {
+uint16_t fetchIndirectAddress(CPU *cpu) {
   uint8_t ll = fetchInstructionByte(cpu);
   uint8_t hh = fetchInstructionByte(cpu);
   uint16_t instructionAddress = (uint16_t)hh << 8 | ll;
@@ -135,21 +135,29 @@ uint16_t fetchIndirect(CPU *cpu) {
   return (uint16_t)hhIndirect << 8 | llIndirect;
 }
 
-uint8_t fetchPreIndexedIndirectX(CPU *cpu) {
+uint16_t fetchPreIndexedIndirectXAddress(CPU *cpu) {
   uint8_t instructionAddress = fetchInstructionByte(cpu);
   uint8_t indexedAddress = instructionAddress + cpu->X;
   uint8_t ll = readBus(cpu, indexedAddress);
   uint8_t hh = readBus(cpu, indexedAddress + 1);
-  uint16_t effectiveAddress = (uint16_t)hh << 8 | ll;
+  return (uint16_t)hh << 8 | ll;
+}
+
+uint8_t fetchPreIndexedIndirectX(CPU *cpu) {
+  uint16_t effectiveAddress = fetchPreIndexedIndirectXAddress(cpu);
   return readBus(cpu, effectiveAddress);
 }
 
-uint8_t fetchPostIndexedIndirectY(CPU *cpu) {
+uint16_t fetchPostIndexedIndirectYAddress(CPU *cpu) {
   uint16_t instructionAddress = fetchInstructionByte(cpu);
   uint8_t ll = readBus(cpu, instructionAddress);
   uint8_t hh = readBus(cpu, instructionAddress);
   uint16_t lookupAddress = (uint16_t)hh << 8 | ll;
-  uint16_t effectiveAddress = lookupAddress + cpu->Y;
+  return lookupAddress + cpu->Y;
+}
+
+uint8_t fetchPostIndexedIndirectY(CPU *cpu) {
+  uint16_t effectiveAddress = fetchPostIndexedIndirectYAddress(cpu);
   return readBus(cpu, effectiveAddress);
 }
 
@@ -725,7 +733,7 @@ void jumpAbsolute(CPU *cpu) {
 
 // 0x6C
 void jumpIndirect(CPU *cpu) {
-  uint16_t address = fetchIndirect(cpu);
+  uint16_t address = fetchIndirectAddress(cpu);
   jump(cpu, address);
 }
 
@@ -1181,6 +1189,99 @@ void subtractWithCarryIndirectX(CPU *cpu) {
 void subtractWithCarryIndirectY(CPU *cpu) {
   uint8_t memValue = fetchPostIndexedIndirectY(cpu);
   uint8_t result = subtractWithCarry(cpu, memValue);
+}
+
+// SEC Set Carry Flag
+// 0x38
+void setCarry(CPU *cpu) { cpu->P = cpu->P | 0x01; }
+
+// SED Set Decimal Flag
+// 0xF8
+void setDecimal(CPU *cpu) { cpu->P = cpu->P | 0x08; }
+
+// SEI Set Interrupt Disable Status
+// 0x78
+void setInterruptDisable(CPU *cpu) { cpu->P = cpu->P | 0x04; }
+
+// STA Store Accumulator in Memory
+// 0x85
+void storeAccumulatorZeroPage(CPU *cpu) {
+  uint16_t memAddr = fetchZeroPageAddress(cpu);
+  cpu->Memory[memAddr] = cpu->A;
+}
+
+// 0x95
+void storeAccumulatorZeroPageX(CPU *cpu) {
+  uint16_t memAddr = fetchZeroPageAddress(cpu) + cpu->X;
+  cpu->Memory[memAddr] = cpu->A;
+}
+
+// 0x8D
+void storeAccumulatorAbsolute(CPU *cpu) {
+  uint16_t memAddr = fetchAbsoluteAddress(cpu);
+  cpu->Memory[memAddr] = cpu->A;
+}
+
+// 0x9D
+void storeAccumulatorAbsoluteX(CPU *cpu) {
+  uint16_t memAddr = fetchAbsoluteAddress(cpu) + cpu->X;
+  cpu->Memory[memAddr] = cpu->A;
+}
+
+// 0x99
+void storeAccumulatorAbsoluteY(CPU *cpu) {
+  uint16_t memAddr = fetchAbsoluteAddress(cpu) + cpu->Y;
+  cpu->Memory[memAddr] = cpu->A;
+}
+
+// 0x81
+void storeAccumulatorIndirectX(CPU *cpu) {
+  uint16_t memAddr = fetchPreIndexedIndirectXAddress(cpu) + cpu->Y;
+  cpu->Memory[memAddr] = cpu->A;
+}
+
+// 0x91
+void storeAccumulatorIndirectY(CPU *cpu) {
+  uint16_t memAddr = fetchPostIndexedIndirectYAddress(cpu);
+  cpu->Memory[memAddr] = cpu->A;
+}
+
+// STX Store Index X in Memory
+// 0x86
+void storeXZeroPage(CPU *cpu) {
+  uint16_t memAddr = fetchZeroPageAddress(cpu);
+  cpu->Memory[memAddr] = cpu->X;
+}
+
+// 0x96
+void storeXZeroPageY(CPU *cpu) {
+  uint16_t memAddr = fetchZeroPageAddress(cpu) + cpu->Y;
+  cpu->Memory[memAddr] = cpu->X;
+}
+
+// 0x8E
+void storeXAbsolute(CPU *cpu) {
+  uint16_t memAddr = fetchAbsoluteAddress(cpu);
+  cpu->Memory[memAddr] = cpu->X;
+}
+
+// STX Store Index Y in Memory
+// 0x84
+void storeYZeroPage(CPU *cpu) {
+  uint16_t memAddr = fetchZeroPageAddress(cpu);
+  cpu->Memory[memAddr] = cpu->Y;
+}
+
+// 0x94
+void storeYZeroPageX(CPU *cpu) {
+  uint16_t memAddr = fetchZeroPageAddress(cpu) + cpu->X;
+  cpu->Memory[memAddr] = cpu->Y;
+}
+
+// 0x8C
+void storeYAbsolute(CPU *cpu) {
+  uint16_t memAddr = fetchAbsoluteAddress(cpu);
+  cpu->Memory[memAddr] = cpu->Y;
 }
 
 void executeInstruction(CPU *cpu) {
