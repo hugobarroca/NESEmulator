@@ -1,7 +1,6 @@
 // This file is meant to hold all the necessary code to emulate the Ricoh 2A03 /
 // 6502 Processor CPU (based on the 6502 CPU).
 #include "cpu.h"
-#include <cstdint>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -259,7 +258,6 @@ void addWithCarryIndirectY(CPU *cpu) {
 // AND Memory with Accumulator
 // NZCIDV
 // ++----
-
 void andMemoryWithAccumulator(CPU *cpu, uint8_t oper) {
   uint8_t result = cpu->A | oper;
   setZeroFlagIfZero(cpu, result);
@@ -273,19 +271,34 @@ void andImmediate(CPU *cpu) {
   andMemoryWithAccumulator(cpu, oper);
 }
 
+// 0x25
 void andZeroPage(CPU *cpu) {
   uint8_t oper = fetchZeroPage(cpu);
   andMemoryWithAccumulator(cpu, oper);
 }
 
+// 0x35
 void andZeroPageX(CPU *cpu) {
   uint8_t oper = fetchZeroPageX(cpu);
   andMemoryWithAccumulator(cpu, oper);
 }
 
+// 0x2D
 void andAbsolute(CPU *cpu) {
   uint8_t oper = fetchAbsolute(cpu);
   andMemoryWithAccumulator(cpu, oper);
+}
+
+// 0x3D
+void andAbsoluteX(CPU *cpu) {
+  uint8_t memValue = fetchAbsoluteX(cpu);
+  andMemoryWithAccumulator(cpu, memValue);
+}
+
+// 0x39
+void andAbsoluteY(CPU *cpu) {
+  uint8_t memValue = fetchAbsoluteY(cpu);
+  andMemoryWithAccumulator(cpu, memValue);
 }
 
 // 0x21, AND (oper, X), 2 bytes, 6 cycles
@@ -523,19 +536,19 @@ void compareWithX(CPU *cpu, uint8_t memory) {
 }
 
 // 0xE0
-void compareWithXImmediate(CPU *cpu, uint8_t memory) {
+void compareWithXImmediate(CPU *cpu) {
   uint8_t oper = fetchImmediate(cpu);
   compareWithX(cpu, oper);
 }
 
 // 0xE4
-void compareWithXZeroPage(CPU *cpu, uint8_t memory) {
+void compareWithXZeroPage(CPU *cpu) {
   uint8_t oper = fetchZeroPage(cpu);
   compareWithX(cpu, oper);
 }
 
 // 0xEC
-void compareWithXAbsolute(CPU *cpu, uint8_t memory) {
+void compareWithXAbsolute(CPU *cpu) {
   uint8_t oper = fetchAbsolute(cpu);
   compareWithX(cpu, oper);
 }
@@ -549,19 +562,19 @@ void compareWithY(CPU *cpu, uint8_t memory) {
 }
 
 // 0xC0
-void compareWithYImmediate(CPU *cpu, uint8_t memory) {
+void compareWithYImmediate(CPU *cpu) {
   uint8_t oper = fetchImmediate(cpu);
   compareWithY(cpu, oper);
 }
 
 // 0xC4
-void compareWithYZeroPage(CPU *cpu, uint8_t memory) {
+void compareWithYZeroPage(CPU *cpu) {
   uint8_t oper = fetchZeroPage(cpu);
   compareWithY(cpu, oper);
 }
 
 // 0xCC
-void compareWithYAbsolute(CPU *cpu, uint8_t memory) {
+void compareWithYAbsolute(CPU *cpu) {
   uint8_t oper = fetchAbsolute(cpu);
   compareWithY(cpu, oper);
 }
@@ -857,8 +870,8 @@ void loadYZeroPage(CPU *cpu) {
 }
 
 // 0xB4
-void loadYZeroPageY(CPU *cpu) {
-  uint8_t value = fetchZeroPageY(cpu);
+void loadYZeroPageX(CPU *cpu) {
+  uint8_t value = fetchZeroPageX(cpu);
   loadY(cpu, value);
 }
 
@@ -869,8 +882,8 @@ void loadYAbsolute(CPU *cpu) {
 }
 
 // 0xBC
-void loadYAbsoluteY(CPU *cpu) {
-  uint8_t value = fetchAbsoluteY(cpu);
+void loadYAbsoluteX(CPU *cpu) {
+  uint8_t value = fetchAbsoluteX(cpu);
   loadY(cpu, value);
 }
 
@@ -1311,7 +1324,7 @@ void transferStackPointerToX(CPU *cpu) {
   cpu->X = result;
 }
 
-// TXA Transfer Index X to Accumulator 
+// TXA Transfer Index X to Accumulator
 // 0x8A
 void transferXToAccumulator(CPU *cpu) {
   uint8_t result = cpu->X;
@@ -1420,109 +1433,109 @@ void executeInstruction(CPU *cpu) {
     bitTestZeroPage(cpu);
     break;
   case (0x25):
-    // andZeroPage(cpu);
+    andZeroPage(cpu);
     break;
   case (0x26):
-    // rotateLeftZeroPage(cpu);
+    rotateLeftZeroPage(cpu);
     break;
   case (0x28):
-    // pullProcessorStatusFromStack(cpu);
+    pullProcessorStatusFromStack(cpu);
     break;
   case (0x29):
-    // andImmediate(cpu);
+    andImmediate(cpu);
     break;
   case (0x2A):
-    // rotateLeftAccumulator(cpu);
+    rotateLeftAccumulator(cpu);
     break;
   case (0x2C):
     bitTestAbsolute(cpu);
     break;
   case (0x2D):
-    // andAbsolute(cpu);
+    andAbsolute(cpu);
     break;
   case (0x2E):
-    // rotateLeftAbsolute(cpu);
+    rotateLeftAbsolute(cpu);
     break;
   case (0x30):
     branchOnMinusRelative(cpu);
     break;
   case (0x31):
-    // andIndirectY(cpu);
+    andIndirectY(cpu);
     break;
   case (0x35):
-    // andZeroPageX(cpu);
+    andZeroPageX(cpu);
     break;
   case (0x36):
-    // rotateLeftZeroPageX(cpu);
+    rotateLeftZeroPageX(cpu);
     break;
   case (0x38):
-    // setCarry(cpu);
+    setCarry(cpu);
     break;
   case (0x39):
-    // andAbsoluteY(cpu);
+    andAbsoluteY(cpu);
     break;
   case (0x3D):
-    // andAbsoluteX(cpu);
+    andAbsoluteX(cpu);
     break;
   case (0x3E):
-    // rotateLeftAbsoluteX(cpu);
+    rotateLeftAbsoluteX(cpu);
     break;
   case (0x40):
-    // returnFromInterrupt(cpu);
+    returnFromInterrupt(cpu);
     break;
   case (0x41):
-    // exclusiveOrIndirectX(cpu);
+    exclusiveOrIndirectX(cpu);
     break;
   case (0x45):
-    // exclusiveOrZeroPage(cpu);
+    exclusiveOrZeroPage(cpu);
     break;
   case (0x46):
-    // logisticalShiftRightZeroPage(cpu);
+    logisticalShiftRightZeroPage(cpu);
     break;
   case (0x48):
-    // pushAccumulatorOntoStack(cpu);
+    pushAccumulatorOntoStack(cpu);
     break;
   case (0x49):
-    // exclusiveOrImmediate(cpu);
+    exclusiveOrImmediate(cpu);
     break;
   case (0x4A):
-    // logisticalShiftRightAccumulator(cpu);
+    logisticalShiftRightAccumulator(cpu);
     break;
   case (0x4C):
-    // jumpAbsolute(cpu);
+    jumpAbsolute(cpu);
     break;
   case (0x4D):
-    // exclusiveOrAbsolute(cpu);
+    exclusiveOrAbsolute(cpu);
     break;
   case (0x4E):
-    // logisticalShiftRightAbsolute(cpu);
+    logisticalShiftRightAbsolute(cpu);
     break;
   case (0x50):
     branchOnOverflowClearRelative(cpu);
     break;
   case (0x51):
-    // exclusiveOrIndirectY(cpu);
+    exclusiveOrIndirectY(cpu);
     break;
   case (0x55):
-    // exclusiveOrZeroPageX(cpu);
+    exclusiveOrZeroPageX(cpu);
     break;
   case (0x56):
-    // logisticalShiftRightZeroPageX(cpu);
+    logisticalShiftRightZeroPageX(cpu);
     break;
   case (0x58):
-    // clearInterruptDisable(cpu);
+    clearInterruptDisable(cpu);
     break;
   case (0x59):
-    // exclusiveOrAbsoluteY(cpu);
+    exclusiveOrAbsoluteY(cpu);
     break;
   case (0x5D):
-    // exclusiveOrAbsoluteX(cpu);
+    exclusiveOrAbsoluteX(cpu);
     break;
   case (0x5E):
-    // logisticalShiftRightAbsoluteX(cpu);
+    logisticalShiftRightAbsoluteX(cpu);
     break;
   case (0x60):
-    // returnFromSubroutine(cpu);
+    returnFromSubroutine(cpu);
     break;
   case (0x61):
     addWithCarryIndirectX(cpu);
@@ -1531,25 +1544,25 @@ void executeInstruction(CPU *cpu) {
     addWithCarryZeroPage(cpu);
     break;
   case (0x66):
-    // rotateRightZeroPage(cpu);
+    rotateRightZeroPage(cpu);
     break;
   case (0x68):
-    // pullAccumulatorFromStack(cpu);
+    pullAccumulatorFromStack(cpu);
     break;
   case (0x69):
     addWithCarryImmediate(cpu);
     break;
   case (0x6A):
-    // rotateRightAccumulator(cpu);
+    rotateRightAccumulator(cpu);
     break;
   case (0x6C):
-    // jumpIndirect(cpu);
+    jumpIndirect(cpu);
     break;
   case (0x6D):
     addWithCarryAbsolute(cpu);
     break;
   case (0x6E):
-    // rotateRightAbsolute(cpu);
+    rotateRightAbsolute(cpu);
     break;
   case (0x70):
     branchOnOverflowSetRelative(cpu);
@@ -1561,10 +1574,10 @@ void executeInstruction(CPU *cpu) {
     addWithCarryZeroPageX(cpu);
     break;
   case (0x76):
-    // rotateRightZeroPageX(cpu);
+    rotateRightZeroPageX(cpu);
     break;
   case (0x78):
-    // setInterruptDisable(cpu);
+    setInterruptDisable(cpu);
     break;
   case (0x79):
     addWithCarryAbsoluteY(cpu);
@@ -1573,244 +1586,244 @@ void executeInstruction(CPU *cpu) {
     addWithCarryAbsoluteX(cpu);
     break;
   case (0x7E):
-    // rotateRightAbsoluteX(cpu);
+    rotateRightAbsoluteX(cpu);
     break;
   case (0x81):
-    // storeAccumulatorIndirectX(cpu);
+    storeAccumulatorIndirectX(cpu);
     break;
   case (0x84):
-    // storeYZeroPage(cpu);
+    storeYZeroPage(cpu);
     break;
   case (0x85):
-    // storeAccumulatorZeroPage(cpu);
+    storeAccumulatorZeroPage(cpu);
     break;
   case (0x86):
-    // storeXZeroPage(cpu);
+    storeXZeroPage(cpu);
     break;
   case (0x88):
-    // decrementY(cpu);
+    decrementY(cpu);
     break;
   case (0x8A):
-    // transferXToAccumulator(cpu);
+    transferXToAccumulator(cpu);
     break;
   case (0x8C):
-    // storeYAbsolute(cpu);
+    storeYAbsolute(cpu);
     break;
   case (0x8D):
-    // storeAccumulatorAbsolute(cpu);
+    storeAccumulatorAbsolute(cpu);
     break;
   case (0x8E):
-    // storeXAbsolute(cpu);
+    storeXAbsolute(cpu);
     break;
   case (0x90):
-    // branchOnClearCarryRelative(cpu);
+    branchOnClearCarryRelative(cpu);
     break;
   case (0x91):
-    // storeAccumulatorIndirectY(cpu);
+    storeAccumulatorIndirectY(cpu);
     break;
   case (0x94):
-    // storeYZeroPageX(cpu);
+    storeYZeroPageX(cpu);
     break;
   case (0x95):
-    // storeAccumulatorZeroPageX(cpu);
+    storeAccumulatorZeroPageX(cpu);
     break;
   case (0x96):
-    // storeXZeroPageY(cpu);
+    storeXZeroPageY(cpu);
     break;
   case (0x98):
-    // transferYToAccumulator(cpu);
+    transferYToAccumulator(cpu);
     break;
   case (0x99):
-    // storeAccumulatorAbsoluteY(cpu);
+    storeAccumulatorAbsoluteY(cpu);
     break;
   case (0x9A):
-    // transferXToStackPointer(cpu);
+    transferXToStackPointer(cpu);
     break;
   case (0x9D):
-    // storeAccumulatorAbsoluteX(cpu);
+    storeAccumulatorAbsoluteX(cpu);
     break;
   case (0xA0):
-    // loadYImmediate(cpu);
+    loadYImmediate(cpu);
     break;
   case (0xA1):
-    // loadAccumulatorIndirectX(cpu);
+    loadAccumulatorIndirectX(cpu);
     break;
   case (0xA2):
-    // loadXImmediate(cpu);
+    loadXImmediate(cpu);
     break;
   case (0xA4):
-    // loadYZeroPage(cpu);
+    loadYZeroPage(cpu);
     break;
   case (0xA5):
-    // loadAccumulatorZeroPage(cpu);
+    loadAccumulatorZeroPage(cpu);
     break;
   case (0xA6):
-    // loadXZeroPage(cpu);
+    loadXZeroPage(cpu);
     break;
   case (0xA8):
-    // transferAccumulatorToY(cpu);
+    transferAccumulatorToY(cpu);
     break;
   case (0xA9):
-    // loadAccumulatorImmediate(cpu);
+    loadAccumulatorImmediate(cpu);
     break;
   case (0xAA):
-    // transferAccumulatorToX(cpu);
+    transferAccumulatorToX(cpu);
     break;
   case (0xAC):
-    // loadYAbsolute(cpu);
+    loadYAbsolute(cpu);
     break;
   case (0xAD):
-    // loadAccumulatorAbsolute(cpu);
+    loadAccumulatorAbsolute(cpu);
     break;
   case (0xAE):
-    // loadXAbsolute(cpu);
+    loadXAbsolute(cpu);
     break;
   case (0xB0):
-    // branchOnCarrySetRelative(cpu);
+    branchOnCarrySetRelative(cpu);
     break;
   case (0xB1):
-    // loadAccumulatorIndirectY(cpu);
+    loadAccumulatorIndirectY(cpu);
     break;
   case (0xB4):
-    // loadYZeroPageX(cpu);
+    loadYZeroPageX(cpu);
     break;
   case (0xB5):
-    // loadAccumulatorZeroPageX(cpu);
+    loadAccumulatorZeroPageX(cpu);
     break;
   case (0xB6):
-    // loadXZeroPageY(cpu);
+    loadXZeroPageY(cpu);
     break;
   case (0xB8):
-    // clearOverflow(cpu);
+    clearOverflow(cpu);
     break;
   case (0xB9):
-    // loadAccumulatorAbsoluteY(cpu);
+    loadAccumulatorAbsoluteY(cpu);
     break;
   case (0xBA):
-    // transferStackPointerToX(cpu);
+    transferStackPointerToX(cpu);
     break;
   case (0xBC):
-    // loadYAbsoluteX(cpu);
+    loadYAbsoluteX(cpu);
     break;
   case (0xBD):
-    // loadAccumulatorAbsoluteX(cpu);
+    loadAccumulatorAbsoluteX(cpu);
     break;
   case (0xBE):
-    // loadXAbsoluteY(cpu);
+    loadXAbsoluteY(cpu);
     break;
   case (0xC0):
-    // compareWithYImmediate(cpu);
+    compareWithYImmediate(cpu);
     break;
   case (0xC1):
-    // compareWithAccumulatorIndirectX(cpu);
+    compareWithAccumulatorIndirectX(cpu);
     break;
   case (0xC4):
-    // compareWithYZeroPage(cpu);
+    compareWithYZeroPage(cpu);
     break;
   case (0xC5):
-    // compareWithAccumulatorZeroPage(cpu);
+    compareWithAccumulatorZeroPage(cpu);
     break;
   case (0xC6):
-    // decrementZeroPage(cpu);
+    decrementZeroPage(cpu);
     break;
   case (0xC8):
-    // incrementY(cpu);
+    incrementY(cpu);
     break;
   case (0xC9):
-    // compareWithAccumulatorImmediate(cpu);
+    compareWithAccumulatorImmediate(cpu);
     break;
   case (0xCA):
-    // decrementX(cpu);
+    decrementX(cpu);
     break;
   case (0xCC):
-    // compareWithYAbsolute(cpu);
+    compareWithYAbsolute(cpu);
     break;
   case (0xCD):
-    // compareWithAccumulatorAbsolute(cpu);
+    compareWithAccumulatorAbsolute(cpu);
     break;
   case (0xCE):
-    // decrementAbsolute(cpu);
+    decrementAbsolute(cpu);
     break;
   case (0xD0):
     branchOnNotEqualRelative(cpu);
     break;
   case (0xD1):
-    // compareWithAccumulatorIndirectY(cpu);
+    compareWithAccumulatorIndirectY(cpu);
     break;
   case (0xD5):
-    // compareWithAccumulatorZeroPageX(cpu);
+    compareWithAccumulatorZeroPageX(cpu);
     break;
   case (0xD6):
-    // decrementZeroPageX(cpu);
+    decrementZeroPageX(cpu);
     break;
   case (0xD8):
-    // clearDecimal(cpu);
+    clearDecimal(cpu);
     break;
   case (0xD9):
-    // compareWithAccumulatorAbsoluteY(cpu);
+    compareWithAccumulatorAbsoluteY(cpu);
     break;
   case (0xDD):
-    // compareWithAccumulatorAbsoluteX(cpu);
+    compareWithAccumulatorAbsoluteX(cpu);
     break;
   case (0xDE):
-    // decrementAbsoluteX(cpu);
+    decrementAbsoluteX(cpu);
     break;
   case (0xE0):
-    // compareWithXImmediate(cpu);
+    compareWithXImmediate(cpu);
     break;
   case (0xE1):
-    // subtractWithCarryIndirectX(cpu);
+    subtractWithCarryIndirectX(cpu);
     break;
   case (0xE4):
-    // compareWithXZeroPage(cpu);
+    compareWithXZeroPage(cpu);
     break;
   case (0xE5):
-    // subtractWithCarryZeroPage(cpu);
+    subtractWithCarryZeroPage(cpu);
     break;
   case (0xE6):
-    // incrementZeroPage(cpu);
+    incrementZeroPage(cpu);
     break;
   case (0xE8):
-    // incrementX(cpu);
+    incrementX(cpu);
     break;
   case (0xE9):
-    // subtractWithCarryImmediate(cpu);
+    subtractWithCarryImmediate(cpu);
     break;
   case (0xEA):
-    // noOperation(cpu);
+    noOperation(cpu);
     break;
   case (0xEC):
-    // compareWithXAbsolute(cpu);
+    compareWithXAbsolute(cpu);
     break;
   case (0xED):
-    // subtractWithCarryAbsolute(cpu);
+    subtractWithCarryAbsolute(cpu);
     break;
   case (0xEE):
-    // incrementAbsolute(cpu);
+    incrementAbsolute(cpu);
     break;
   case (0xF0):
     branchOnEqualRelative(cpu);
     break;
   case (0xF1):
-    // subtractWithCarryIndirectY(cpu);
+    subtractWithCarryIndirectY(cpu);
     break;
   case (0xF5):
-    // subtractWithCarryZeroPageX(cpu);
+    subtractWithCarryZeroPageX(cpu);
     break;
   case (0xF6):
-    // incrementZeroPageX(cpu);
+    incrementZeroPageX(cpu);
     break;
   case (0xF8):
-    // setDecimal(cpu);
+    setDecimal(cpu);
     break;
   case (0xF9):
-    // subtractWithCarryAbsoluteY(cpu);
+    subtractWithCarryAbsoluteY(cpu);
     break;
   case (0xFD):
-    // subtractWithCarryAbsoluteX(cpu);
+    subtractWithCarryAbsoluteX(cpu);
     break;
   case (0xFE):
-    // incrementAbsoluteX(cpu);
+    incrementAbsoluteX(cpu);
     break;
   default:
     break;
@@ -1818,9 +1831,12 @@ void executeInstruction(CPU *cpu) {
 }
 
 void execute(CPU *cpu) {
-  executeInstruction(cpu);
-  printf("Finished executing instrunction. Press any character to continue.\n");
-  getchar();
+  while (true) {
+    executeInstruction(cpu);
+    printf(
+        "Finished executing instruction. Press any character to continue.\n");
+    getchar();
+  }
 }
 
 void loadGame(CPU *cpu, char fileName[]) {
