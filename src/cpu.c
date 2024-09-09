@@ -20,19 +20,91 @@ void initProcessor(CPU *cpu) {
   }
 }
 
-void readGameHeaders(CPU *cpu) {
+void printMapperName(uint8_t mapperNumber) {
+  switch (mapperNumber) {
+  case 4:
+    printf("Nintendo MMC3 Mapper recognized!\n");
+    break;
+  default:
+    printf("Unrecognized mapper.\n");
+  }
+}
+
+void readGameHeader(CPU *cpu) {
   uint8_t *nes = cpu->Memory;
   printf("HEADER START: %.3s\n", nes);
   printf("PRG ROM Size: %d KBs.\n", cpu->Memory[4] * 16);
   printf("CHR ROM Size: %d KBs.\n", cpu->Memory[5] * 8);
   printf("Flags 6: %d\n", cpu->Memory[6]);
+  if ((cpu->Memory[6] & 0x01) == 0x01) {
+    printf("Nametable arrangement: horizontal\n");
+  } else {
+    printf("Nametable arrangement: vertical\n");
+  }
+  if ((cpu->Memory[6] & 0x02) == 0x02) {
+    printf("Battery-backed PRG RAM detected.\n"); // usually $6000
+  } else {
+    printf("No persistent memory detected.\n");
+  }
+  if ((cpu->Memory[6] & 0x04) == 0x04) {
+    printf("512-byte trainer is present!\n");
+  } else {
+    printf("No trainer present.\n");
+  }
+  if ((cpu->Memory[6] & 0x08) == 0x08) {
+    printf("Using alternative nametable layout!\n");
+  } else {
+    printf("Regular nametable layout.\n");
+  }
+
   printf("Flags 7: %d\n", cpu->Memory[7]);
-  printf("Flags 8: %d\n", cpu->Memory[8]);
+  if ((cpu->Memory[7] & 0x01) == 0x01) {
+    printf("VS Unisystem ON\n");
+  } else {
+    printf("VS Unisystem OFF\n");
+  }
+  if ((cpu->Memory[7] & 0x02) == 0x02) {
+    printf("PlayChoice-10 is on.\n");
+  } else {
+    printf("PlayChoice-10 is off.\n");
+  }
+  uint8_t mapperNumber =
+      (cpu->Memory[7] & 0xF0) + ((cpu->Memory[6] & 0xF0) >> 4);
+  printMapperName(mapperNumber);
+  printf("Mapper number: %d\n", mapperNumber);
+  printf("PRG RAM size: 0x%02x\n", cpu->Memory[8]);
   printf("Flags 9: %d\n", cpu->Memory[9]);
+  if ((cpu->Memory[9] & 0x01) == 1) {
+    printf("TV System: PAL\n");
+  } else {
+    printf("TV System NTSC\n");
+  }
+
   printf("Flags 10: %d\n", cpu->Memory[10]);
 
   uint8_t *ripper = cpu->Memory + 11;
   printf("RIPPER NAME: %.5s\n", ripper);
+}
+
+void detectGameFormat(CPU *cpu) {
+  uint8_t byteSeven = cpu->Memory[7];
+  if ((byteSeven & 0x0C) == 0x04) {
+    printf("Archaic iNES format detected.\n");
+    return;
+  }
+  bool endBytesEmpty = true;
+  int i = 12;
+  while (i < 16) {
+    if (cpu->Memory[i] != 0) {
+      endBytesEmpty = false;
+    }
+    i++;
+  }
+  if (((byteSeven & 0x0C) == 0x00) && endBytesEmpty) {
+    printf("Archaic iNES format detected.\n");
+    return;
+  }
+  printf("Unknown game format detected.\n");
 }
 
 void pushStack(CPU *cpu, uint8_t value) {
@@ -1352,480 +1424,616 @@ void transferYToAccumulator(CPU *cpu) {
 }
 
 void executeInstruction(CPU *cpu) {
-  uint8_t prAddr = readBus(cpu, cpu->PC);
-  uint8_t instruction = readBus(cpu, prAddr);
+  uint8_t instruction = readBus(cpu, cpu->PC);
+  printf("PC: 0x%04x. Instruction: 0x%02x. ", cpu->PC, instruction);
   cpu->PC++;
   switch (instruction) {
   case (0x00):
-    // BRK
+    printf("BRK");
     forceBreak(cpu);
     break;
   case (0x01):
-    // ORA (oper,X) ex: ORA ($20,X)
+    printf("ORA (oper,X)");
     orAIndirectX(cpu);
     break;
   case (0x05):
-    // ORA oper, ex: ORA $20
+    printf("ORA oper");
     orAZeroPage(cpu);
     break;
   case (0x06):
-    // ASL oper, ex ASL $20
+    printf("ASL oper");
     arithmeticShiftLeftZeroPage(cpu);
     break;
   case (0x08):
-    // PHP
+    printf("PHP");
     pushProcessorStatusOnStack(cpu);
     break;
   case (0x09):
-    // ORA #oper, ex: ORA #7
+    printf("ORA #oper");
     orAImmediate(cpu);
     break;
   case (0x0A):
-    // ASL
+    printf("ASL");
     arithmeticShiftLeftAccumulator(cpu);
     break;
   case (0x0D):
-    // ORA oper, ex ORA 20
+    printf("ORA oper");
     orAAbsolute(cpu);
     break;
   case (0x0E):
-    // ASL opr, ex ASL 20
+    printf("ASL opr");
     arithmeticShiftLeftAbsolute(cpu);
     break;
   case (0x10):
-    // BPL oper, ex BPL 20
+    printf("BPL oper");
     branchOnPlusRelative(cpu);
     break;
   case (0x11):
-    // ORA (oper),Y, ex ORA (20),Y
+    printf("ORA (oper),Y");
     orAIndirectY(cpu);
     break;
   case (0x15):
-    // ORA oper,X
+    printf("ORA oper,X");
     orAZeroPageX(cpu);
     break;
   case (0x16):
-    // ASL oper,X
+    printf("ASL oper,X");
     arithmeticShiftLeftZeroPageX(cpu);
     break;
   case (0x18):
-    // CLC
+    printf("CLC");
     clearCarry(cpu);
+    break;
   case (0x19):
-    // ORA oper,Y
+    printf("ORA oper,Y");
     orAAbsoluteY(cpu);
     break;
   case (0x1D):
-    // ORA oper,X
+    printf("ORA oper,X");
     orAAbsoluteX(cpu);
     break;
   case (0x1E):
-    // ASL oper,X
+    printf("ASL oper,X");
     arithmeticShiftLeftAbsoluteX(cpu);
     break;
   case (0x20):
+    printf("JSR");
     jumpSubRoutineAbsolute(cpu);
     break;
   case (0x21):
+    printf("AND (oper,X)");
     andIndirectX(cpu);
     break;
   case (0x24):
+    printf("BIT oper");
     bitTestZeroPage(cpu);
     break;
   case (0x25):
+    printf("AND oper");
     andZeroPage(cpu);
     break;
   case (0x26):
+    printf("ROL oper");
     rotateLeftZeroPage(cpu);
     break;
   case (0x28):
+    printf("PLP");
     pullProcessorStatusFromStack(cpu);
     break;
   case (0x29):
+    printf("AND #oper");
     andImmediate(cpu);
     break;
   case (0x2A):
+    printf("ROL A");
     rotateLeftAccumulator(cpu);
     break;
   case (0x2C):
+    printf("BIT oper");
     bitTestAbsolute(cpu);
     break;
   case (0x2D):
+    printf("AND oper");
     andAbsolute(cpu);
     break;
   case (0x2E):
+    printf("ROL oper");
     rotateLeftAbsolute(cpu);
     break;
   case (0x30):
+    printf("BMI");
     branchOnMinusRelative(cpu);
     break;
   case (0x31):
+    printf("AND (oper),Y");
     andIndirectY(cpu);
     break;
   case (0x35):
+    printf("AND oper,X");
     andZeroPageX(cpu);
     break;
   case (0x36):
+    printf("ROL oper,X");
     rotateLeftZeroPageX(cpu);
     break;
   case (0x38):
+    printf("SEC");
     setCarry(cpu);
     break;
   case (0x39):
+    printf("AND oper,Y");
     andAbsoluteY(cpu);
     break;
   case (0x3D):
+    printf("AND oper,X");
     andAbsoluteX(cpu);
     break;
   case (0x3E):
+    printf("ROL oper,X");
     rotateLeftAbsoluteX(cpu);
     break;
   case (0x40):
+    printf("RTI");
     returnFromInterrupt(cpu);
     break;
   case (0x41):
+    printf("EOR (oper,X)");
     exclusiveOrIndirectX(cpu);
     break;
   case (0x45):
+    printf("EOR oper");
     exclusiveOrZeroPage(cpu);
     break;
   case (0x46):
+    printf("LSR oper");
     logisticalShiftRightZeroPage(cpu);
     break;
   case (0x48):
+    printf("PHA");
     pushAccumulatorOntoStack(cpu);
     break;
   case (0x49):
+    printf("EOR #oper");
     exclusiveOrImmediate(cpu);
     break;
   case (0x4A):
+    printf("LSR A");
     logisticalShiftRightAccumulator(cpu);
     break;
   case (0x4C):
+    printf("JMP");
     jumpAbsolute(cpu);
     break;
   case (0x4D):
+    printf("EOR oper");
     exclusiveOrAbsolute(cpu);
     break;
   case (0x4E):
+    printf("LSR oper");
     logisticalShiftRightAbsolute(cpu);
     break;
   case (0x50):
+    printf("BVC oper");
     branchOnOverflowClearRelative(cpu);
     break;
   case (0x51):
+    printf("EOR (oper),Y");
     exclusiveOrIndirectY(cpu);
     break;
   case (0x55):
+    printf("EOR oper,X");
     exclusiveOrZeroPageX(cpu);
     break;
   case (0x56):
+    printf("LSR oper,X");
     logisticalShiftRightZeroPageX(cpu);
     break;
   case (0x58):
+    printf("CLI");
     clearInterruptDisable(cpu);
     break;
   case (0x59):
+    printf("EOR oper,Y");
     exclusiveOrAbsoluteY(cpu);
     break;
   case (0x5D):
+    printf("EOR oper,X");
     exclusiveOrAbsoluteX(cpu);
     break;
   case (0x5E):
+    printf("LSR oper,X");
     logisticalShiftRightAbsoluteX(cpu);
     break;
   case (0x60):
+    printf("RTS");
     returnFromSubroutine(cpu);
     break;
   case (0x61):
+    printf("ADC (oper,X)");
     addWithCarryIndirectX(cpu);
     break;
   case (0x65):
+    printf("ADC oper");
     addWithCarryZeroPage(cpu);
     break;
   case (0x66):
+    printf("ROR oper");
     rotateRightZeroPage(cpu);
     break;
   case (0x68):
+    printf("PLA");
     pullAccumulatorFromStack(cpu);
     break;
   case (0x69):
+    printf("ADC #oper");
     addWithCarryImmediate(cpu);
     break;
   case (0x6A):
+    printf("ROR A");
     rotateRightAccumulator(cpu);
     break;
   case (0x6C):
+    printf("JMP (oper)");
     jumpIndirect(cpu);
     break;
   case (0x6D):
+    printf("ADC oper");
     addWithCarryAbsolute(cpu);
     break;
   case (0x6E):
+    printf("ROR oper");
     rotateRightAbsolute(cpu);
     break;
   case (0x70):
+    printf("BVS");
     branchOnOverflowSetRelative(cpu);
     break;
   case (0x71):
+    printf("ADC (oper),Y");
     addWithCarryIndirectY(cpu);
     break;
   case (0x75):
+    printf("ADC oper,X");
     addWithCarryZeroPageX(cpu);
     break;
   case (0x76):
+    printf("ROR oper,X");
     rotateRightZeroPageX(cpu);
     break;
   case (0x78):
+    printf("SEI");
     setInterruptDisable(cpu);
     break;
   case (0x79):
+    printf("ADC oper,Y");
     addWithCarryAbsoluteY(cpu);
     break;
   case (0x7D):
+    printf("ADC oper,X");
     addWithCarryAbsoluteX(cpu);
     break;
   case (0x7E):
+    printf("ROR oper,X");
     rotateRightAbsoluteX(cpu);
     break;
   case (0x81):
+    printf("STA (oper,X)");
     storeAccumulatorIndirectX(cpu);
     break;
   case (0x84):
+    printf("STY oper");
     storeYZeroPage(cpu);
     break;
   case (0x85):
+    printf("STA oper");
     storeAccumulatorZeroPage(cpu);
     break;
   case (0x86):
+    printf("STX oper");
     storeXZeroPage(cpu);
     break;
   case (0x88):
+    printf("DEY");
     decrementY(cpu);
     break;
   case (0x8A):
+    printf("TXA");
     transferXToAccumulator(cpu);
     break;
   case (0x8C):
+    printf("STY oper");
     storeYAbsolute(cpu);
     break;
   case (0x8D):
+    printf("STA oper");
     storeAccumulatorAbsolute(cpu);
     break;
   case (0x8E):
+    printf("STX oper");
     storeXAbsolute(cpu);
     break;
   case (0x90):
+    printf("BCC oper");
     branchOnClearCarryRelative(cpu);
     break;
   case (0x91):
+    printf("STA (oper),Y");
     storeAccumulatorIndirectY(cpu);
     break;
   case (0x94):
+    printf("STY oper,X");
     storeYZeroPageX(cpu);
     break;
   case (0x95):
+    printf("STA oper,X");
     storeAccumulatorZeroPageX(cpu);
     break;
   case (0x96):
+    printf("STX oper,Y");
     storeXZeroPageY(cpu);
     break;
   case (0x98):
+    printf("TYA");
     transferYToAccumulator(cpu);
     break;
   case (0x99):
+    printf("STA oper,Y");
     storeAccumulatorAbsoluteY(cpu);
     break;
   case (0x9A):
+    printf("TXS");
     transferXToStackPointer(cpu);
     break;
   case (0x9D):
+    printf("STA oper,X");
     storeAccumulatorAbsoluteX(cpu);
     break;
   case (0xA0):
+    printf("LDY #oper");
     loadYImmediate(cpu);
     break;
   case (0xA1):
+    printf("LDA (oper,X)");
     loadAccumulatorIndirectX(cpu);
     break;
   case (0xA2):
+    printf("LDX #oper");
     loadXImmediate(cpu);
     break;
   case (0xA4):
+    printf("LDY oper");
     loadYZeroPage(cpu);
     break;
   case (0xA5):
+    printf("LDA oper");
     loadAccumulatorZeroPage(cpu);
     break;
   case (0xA6):
+    printf("LDX oper");
     loadXZeroPage(cpu);
     break;
   case (0xA8):
+    printf("TAY");
     transferAccumulatorToY(cpu);
     break;
   case (0xA9):
+    printf("LDA #oper");
     loadAccumulatorImmediate(cpu);
     break;
   case (0xAA):
+    printf("TAX");
     transferAccumulatorToX(cpu);
     break;
   case (0xAC):
+    printf("LDY oper");
     loadYAbsolute(cpu);
     break;
   case (0xAD):
+    printf("LDA oper");
     loadAccumulatorAbsolute(cpu);
     break;
   case (0xAE):
+    printf("LDX oper");
     loadXAbsolute(cpu);
     break;
   case (0xB0):
+    printf("BCS oper");
     branchOnCarrySetRelative(cpu);
     break;
   case (0xB1):
+    printf("LDA (oper),Y");
     loadAccumulatorIndirectY(cpu);
     break;
   case (0xB4):
+    printf("LDY oper,X");
     loadYZeroPageX(cpu);
     break;
   case (0xB5):
+    printf("LDA oper,X");
     loadAccumulatorZeroPageX(cpu);
     break;
   case (0xB6):
+    printf("LDX oper,Y");
     loadXZeroPageY(cpu);
     break;
   case (0xB8):
+    printf("CLV");
     clearOverflow(cpu);
     break;
   case (0xB9):
+    printf("LDA oper,Y");
     loadAccumulatorAbsoluteY(cpu);
     break;
   case (0xBA):
+    printf("TSX");
     transferStackPointerToX(cpu);
     break;
   case (0xBC):
+    printf("LDY oper,X");
     loadYAbsoluteX(cpu);
     break;
   case (0xBD):
+    printf("LDA oper,X");
     loadAccumulatorAbsoluteX(cpu);
     break;
   case (0xBE):
+    printf("LDX oper,Y");
     loadXAbsoluteY(cpu);
     break;
   case (0xC0):
+    printf("CPY #oper");
     compareWithYImmediate(cpu);
     break;
   case (0xC1):
+    printf("CMP (oper,X)");
     compareWithAccumulatorIndirectX(cpu);
     break;
   case (0xC4):
+    printf("CPY oper");
     compareWithYZeroPage(cpu);
     break;
   case (0xC5):
+    printf("CMP oper");
     compareWithAccumulatorZeroPage(cpu);
     break;
   case (0xC6):
+    printf("DEC oper");
     decrementZeroPage(cpu);
     break;
   case (0xC8):
+    printf("INY");
     incrementY(cpu);
     break;
   case (0xC9):
+    printf("CMP #oper");
     compareWithAccumulatorImmediate(cpu);
     break;
   case (0xCA):
+    printf("DEX");
     decrementX(cpu);
     break;
   case (0xCC):
+    printf("CPY oper");
     compareWithYAbsolute(cpu);
     break;
   case (0xCD):
+    printf("CMP oper");
     compareWithAccumulatorAbsolute(cpu);
     break;
   case (0xCE):
+    printf("DEC oper");
     decrementAbsolute(cpu);
     break;
   case (0xD0):
+    printf("BNE oper");
     branchOnNotEqualRelative(cpu);
     break;
   case (0xD1):
+    printf("CMP (oper),Y");
     compareWithAccumulatorIndirectY(cpu);
     break;
   case (0xD5):
+    printf("CMP oper,X");
     compareWithAccumulatorZeroPageX(cpu);
     break;
   case (0xD6):
+    printf("DEC oper,X");
     decrementZeroPageX(cpu);
     break;
   case (0xD8):
+    printf("CLD");
     clearDecimal(cpu);
     break;
   case (0xD9):
+    printf("CMP oper,Y");
     compareWithAccumulatorAbsoluteY(cpu);
     break;
   case (0xDD):
+    printf("CMP oper,X");
     compareWithAccumulatorAbsoluteX(cpu);
     break;
   case (0xDE):
+    printf("DEC oper,X");
     decrementAbsoluteX(cpu);
     break;
   case (0xE0):
+    printf("CPX #oper");
     compareWithXImmediate(cpu);
     break;
   case (0xE1):
+    printf("SBC (oper,X)");
     subtractWithCarryIndirectX(cpu);
     break;
   case (0xE4):
+    printf("CPX oper");
     compareWithXZeroPage(cpu);
     break;
   case (0xE5):
+    printf("SBC oper");
     subtractWithCarryZeroPage(cpu);
     break;
   case (0xE6):
+    printf("INC oper");
     incrementZeroPage(cpu);
     break;
   case (0xE8):
+    printf("INX");
     incrementX(cpu);
     break;
   case (0xE9):
+    printf("SBC #oper");
     subtractWithCarryImmediate(cpu);
     break;
   case (0xEA):
+    printf("NOP");
     noOperation(cpu);
     break;
   case (0xEC):
+    printf("CPX oper");
     compareWithXAbsolute(cpu);
     break;
   case (0xED):
+    printf("SBC oper");
     subtractWithCarryAbsolute(cpu);
     break;
   case (0xEE):
+    printf("INC oper");
     incrementAbsolute(cpu);
     break;
   case (0xF0):
+    printf("BEQ oper");
     branchOnEqualRelative(cpu);
     break;
   case (0xF1):
+    printf("SBC (oper),Y");
     subtractWithCarryIndirectY(cpu);
     break;
   case (0xF5):
+    printf("SBC oper,X");
     subtractWithCarryZeroPageX(cpu);
     break;
   case (0xF6):
+    printf("INC oper,X");
     incrementZeroPageX(cpu);
     break;
   case (0xF8):
+    printf("SED");
     setDecimal(cpu);
     break;
   case (0xF9):
+    printf("SBC oper,Y");
     subtractWithCarryAbsoluteY(cpu);
     break;
   case (0xFD):
+    printf("SBC oper,X");
     subtractWithCarryAbsoluteX(cpu);
     break;
   case (0xFE):
+    printf("INC oper,X");
     incrementAbsoluteX(cpu);
     break;
   default:
+    printf("UNKNOWN.");
     break;
   }
 }
@@ -1833,8 +2041,6 @@ void executeInstruction(CPU *cpu) {
 void execute(CPU *cpu) {
   while (true) {
     executeInstruction(cpu);
-    printf(
-        "Finished executing instruction. Press any character to continue.\n");
     getchar();
   }
 }
@@ -1858,8 +2064,9 @@ void loadGame(CPU *cpu, char fileName[]) {
   fread(gameStart, 1, (fileSize / 8), file);
   printf("Read file successfully!\n");
 
-  // Read the game header and initialize CPU accordingly
-  readGameHeaders(cpu);
+  initProcessor(cpu);
+  readGameHeader(cpu);
+  detectGameFormat(cpu);
   execute(cpu);
   fclose(file);
 }

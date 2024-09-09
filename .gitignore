@@ -1,3 +1,4 @@
+assemblyTests/*
 *.out
 */Roms/*
 *.nes
