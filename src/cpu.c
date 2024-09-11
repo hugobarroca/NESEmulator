@@ -1,4 +1,4 @@
-// This file is meant to hold all the necessary code to emulate the Ricoh 2A03 /
+
 // 6502 Processor CPU (based on the 6502 CPU).
 #include "cpu.h"
 #include <stdbool.h>
@@ -35,6 +35,8 @@ void readGameHeader(CPU *cpu) {
   printf("HEADER START: %.3s\n", nes);
   printf("PRG ROM Size: %d KBs.\n", cpu->Memory[4] * 16);
   printf("CHR ROM Size: %d KBs.\n", cpu->Memory[5] * 8);
+
+  // Flags 6
   printf("Flags 6: %d\n", cpu->Memory[6]);
   if ((cpu->Memory[6] & 0x01) == 0x01) {
     printf("Nametable arrangement: horizontal\n");
@@ -57,6 +59,7 @@ void readGameHeader(CPU *cpu) {
     printf("Regular nametable layout.\n");
   }
 
+  // Flags 7
   printf("Flags 7: %d\n", cpu->Memory[7]);
   if ((cpu->Memory[7] & 0x01) == 0x01) {
     printf("VS Unisystem ON\n");
@@ -68,20 +71,29 @@ void readGameHeader(CPU *cpu) {
   } else {
     printf("PlayChoice-10 is off.\n");
   }
+
   uint8_t mapperNumber =
       (cpu->Memory[7] & 0xF0) + ((cpu->Memory[6] & 0xF0) >> 4);
   printMapperName(mapperNumber);
   printf("Mapper number: %d\n", mapperNumber);
+  // Flags 8
   printf("PRG RAM size: 0x%02x\n", cpu->Memory[8]);
+  // Flags 9
   printf("Flags 9: %d\n", cpu->Memory[9]);
   if ((cpu->Memory[9] & 0x01) == 1) {
     printf("TV System: PAL\n");
   } else {
     printf("TV System NTSC\n");
   }
-
+  // Flags 10
   printf("Flags 10: %d\n", cpu->Memory[10]);
-
+  if ((cpu->Memory[10] & 0x02) == 0x00) {
+    printf("TV System: NTSC\n");
+  } else if ((cpu->Memory[10] & 0x02) == 0x01) {
+    printf("TV System: PAL\n");
+  } else {
+    printf("TV System: Dual Compatible!\n");
+  }
   uint8_t *ripper = cpu->Memory + 11;
   printf("RIPPER NAME: %.5s\n", ripper);
 }
