@@ -1,4 +1,4 @@
-#import "cpu.h"
+#include "emulator.h"
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -25,6 +25,8 @@ void detectGameFormat(CPU *cpu) {
 
 void printMapperName(uint8_t mapperNumber) {
   switch (mapperNumber) {
+  case 0:
+    printf("NROM Mapper");
   case 4:
     printf("Nintendo MMC3 Mapper recognized!\n");
     break;

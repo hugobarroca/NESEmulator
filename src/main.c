@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdio.h>
-#include "cpu.h"
 #include "utilities.h"
+#include "emulator.h"
 
 int welcomeScreen(){	
 	int commandInteger;
