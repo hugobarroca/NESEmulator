@@ -26,7 +26,8 @@ void detectGameFormat(CPU *cpu) {
 void printMapperName(uint8_t mapperNumber) {
   switch (mapperNumber) {
   case 0:
-    printf("NROM Mapper");
+    printf("NROM Mapper recognized!");
+    break;
   case 4:
     printf("Nintendo MMC3 Mapper recognized!\n");
     break;
@@ -104,6 +105,13 @@ void readGameHeader(CPU *cpu) {
 }
 
 void loadGame(CPU *cpu, char fileName[]) {
+  // The way the game is loaded is dependent on the mapper
+  // For now, implementing mapper 0
+  // Mapper 0
+  // Fixed banks
+  // $6000-$7FFF: ???
+  // $8000-$BFFF: First 16 KB of ROM
+  // $C000-$FFFF: Last 16 KB of ROM or Mirror of $8000-$BFFF
   printf("Attempting to load game: %s\n", fileName);
   FILE *file = fopen(fileName, "rb");
   if (file == NULL) {
@@ -111,7 +119,7 @@ void loadGame(CPU *cpu, char fileName[]) {
     return;
   }
   printf("Opened the file successfully.\n");
-  uint8_t *gameStart = (cpu->Memory);
+  uint8_t *gameStart = (&(cpu->Memory[0x8000]));
   printf("Game start address: %8s\n", gameStart);
 
   fseek(file, 0, SEEK_END);
@@ -119,7 +127,10 @@ void loadGame(CPU *cpu, char fileName[]) {
   fseek(file, 0, SEEK_SET);
 
   printf("Filesize: %ld bytes\n", fileSize);
-  fread(gameStart, 1, (fileSize / 8), file);
+
+  fread(gameStart, sizeof(uint8_t), (fileSize / (8 * 2)), file);
+  gameStart = (&(cpu->Memory[0xC000]));
+  fread(gameStart, sizeof(uint8_t), (fileSize / (8 * 2)), file);
   printf("Read file successfully!\n");
 
   initProcessor(cpu);
