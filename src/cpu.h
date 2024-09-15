@@ -1,6 +1,9 @@
 #include <stdint.h>
 
-typedef struct {
+typedef struct CPU CPU;
+typedef uint8_t (*ReadBus)(CPU *, uint16_t);
+
+struct CPU {
   uint8_t A;
   uint8_t X;
   uint8_t Y;
@@ -20,11 +23,12 @@ typedef struct {
   // 0x0000-0x07FF is the actual RAM addresses, and then they are mirrored 3
   // times, till 0x1FFF
   uint8_t Memory[65536];
-} CPU;
-
-void loadGame(CPU *cpu, char fileName[]);
+  // Emulater specific fields
+  uint8_t *GameData;
+  uint8_t MapperType;
+  ReadBus ReadBus;
+};
 
 void initProcessor(CPU *cpu);
-
+void setAndPrintMapper(CPU *cpu, uint8_t mapperNumber);
 void execute(CPU *cpu);
-

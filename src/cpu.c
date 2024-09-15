@@ -33,19 +33,49 @@ uint8_t popStack(CPU *cpu) {
   return cpu->Memory[(cpu->S - 1) + 0x0100];
 }
 
-// The BUS in the NES had special addresses for different things
-uint8_t readBus(CPU *cpu, uint16_t address) {
+uint8_t readBusMapperZero(CPU *cpu, uint16_t address) {
+  // For NROM Mapper
+  // CPU $6000-$7FFF
+  // CPU $8000-$BFFF First 16KB of ROM
+  // CPU $C000-$FFFF Last 16KB of ROM
+
   // Get it from zero-page memory.
   if (address >= 0x00 && address <= 0x00FF) {
   }
+
   // Get it from the stack.
   if (address >= 0x0100 && address <= 0x01FF) {
     return popStack(cpu);
   }
 
-  return cpu->Memory[address];
-  printf("Invalid bus address was accessed!\n");
+  if (address >= 0x8000 && address <= 0xBFFF) {
+    return cpu->GameData[address - 0x8000];
+  }
+
+  if (address >= 0xC000 && address <= 0xFFFF) {
+    return cpu->GameData[address - 0xC000];
+  }
+
+  printf("ERROR: Invalid bus address was accessed!\n");
   return -1;
+}
+
+uint8_t readBus(CPU *cpu, uint16_t address) {
+  return cpu->ReadBus(cpu, address);
+}
+
+void setAndPrintMapper(CPU *cpu, uint8_t mapperNumber) {
+  switch (mapperNumber) {
+  case 0:
+    printf("NROM Mapper recognized!");
+    cpu->ReadBus = readBusMapperZero;
+    break;
+  case 4:
+    printf("Nintendo MMC3 Mapper recognized!\n");
+    break;
+  default:
+    printf("Unrecognized mapper.\n");
+  }
 }
 
 // Fetches instruction from memory at PC location, and increments PC

@@ -1,6 +1,7 @@
 #include "emulator.h"
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 void detectGameFormat(CPU *cpu) {
   uint8_t byteSeven = cpu->Memory[7];
@@ -21,19 +22,6 @@ void detectGameFormat(CPU *cpu) {
     return;
   }
   printf("Unknown game format detected.\n");
-}
-
-void printMapperName(uint8_t mapperNumber) {
-  switch (mapperNumber) {
-  case 0:
-    printf("NROM Mapper recognized!");
-    break;
-  case 4:
-    printf("Nintendo MMC3 Mapper recognized!\n");
-    break;
-  default:
-    printf("Unrecognized mapper.\n");
-  }
 }
 
 void readGameHeader(CPU *cpu) {
@@ -80,7 +68,8 @@ void readGameHeader(CPU *cpu) {
 
   uint8_t mapperNumber =
       (cpu->Memory[7] & 0xF0) + ((cpu->Memory[6] & 0xF0) >> 4);
-  printMapperName(mapperNumber);
+  cpu->MapperType = mapperNumber;
+  setAndPrintMapper(cpu, mapperNumber);
   printf("Mapper number: %d\n", mapperNumber);
   // Flags 8
   printf("PRG RAM size: 0x%02x\n", cpu->Memory[8]);
@@ -105,13 +94,6 @@ void readGameHeader(CPU *cpu) {
 }
 
 void loadGame(CPU *cpu, char fileName[]) {
-  // The way the game is loaded is dependent on the mapper
-  // For now, implementing mapper 0
-  // Mapper 0
-  // Fixed banks
-  // $6000-$7FFF: ???
-  // $8000-$BFFF: First 16 KB of ROM
-  // $C000-$FFFF: Last 16 KB of ROM or Mirror of $8000-$BFFF
   printf("Attempting to load game: %s\n", fileName);
   FILE *file = fopen(fileName, "rb");
   if (file == NULL) {
@@ -119,18 +101,18 @@ void loadGame(CPU *cpu, char fileName[]) {
     return;
   }
   printf("Opened the file successfully.\n");
-  uint8_t *gameStart = (&(cpu->Memory[0x8000]));
-  printf("Game start address: %8s\n", gameStart);
-
+  //
+  // Set cursor to end of file to read length
   fseek(file, 0, SEEK_END);
   long fileSize = ftell(file);
+
+  // Reset cursor to beggining
   fseek(file, 0, SEEK_SET);
 
   printf("Filesize: %ld bytes\n", fileSize);
-
-  fread(gameStart, sizeof(uint8_t), (fileSize / (8 * 2)), file);
-  gameStart = (&(cpu->Memory[0xC000]));
-  fread(gameStart, sizeof(uint8_t), (fileSize / (8 * 2)), file);
+  // Set gameData array size
+  cpu->GameData = malloc(fileSize / 8);
+  fread(cpu->GameData, sizeof(uint8_t), (fileSize / 8), file);
   printf("Read file successfully!\n");
 
   initProcessor(cpu);
