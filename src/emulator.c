@@ -106,13 +106,12 @@ void loadGame(CPU *cpu, char fileName[]) {
   fseek(file, 0, SEEK_END);
   long fileSize = ftell(file);
 
-  // Reset cursor to beggining
+  // Reset cursor to begining
   fseek(file, 0, SEEK_SET);
 
   printf("Filesize: %ld bytes\n", fileSize);
-  // Set gameData array size
-  cpu->GameData = malloc(fileSize / 8);
-  fread(cpu->GameData, sizeof(uint8_t), (fileSize / 8), file);
+  cpu->GameData = malloc(fileSize);
+  fread(cpu->GameData, sizeof(uint8_t), (fileSize), file);
   printf("Read file successfully!\n");
 
   initProcessor(cpu);

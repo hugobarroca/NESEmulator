@@ -49,11 +49,16 @@ uint8_t readBusMapperZero(CPU *cpu, uint16_t address) {
   }
 
   if (address >= 0x8000 && address <= 0xBFFF) {
-    return cpu->GameData[address - 0x8000];
+    // Subtract 0xC000 for mapping, and add 0x0010 for header
+    uint16_t gameAddress = address - 0xBFF0;
+    return cpu->GameData[gameAddress];
   }
 
   if (address >= 0xC000 && address <= 0xFFFF) {
-    return cpu->GameData[address - 0xC000];
+    // printf("Address value: 0x%02x\n", address);
+    uint16_t gameAddress = address - 0xBFF0;
+    // printf("Game address value: 0x%02x\n", gameAddress);
+    return cpu->GameData[gameAddress];
   }
 
   printf("ERROR: Invalid bus address was accessed!\n");
@@ -67,7 +72,7 @@ uint8_t readBus(CPU *cpu, uint16_t address) {
 void setAndPrintMapper(CPU *cpu, uint8_t mapperNumber) {
   switch (mapperNumber) {
   case 0:
-    printf("NROM Mapper recognized!");
+    printf("NROM Mapper recognized!\n");
     cpu->ReadBus = readBusMapperZero;
     break;
   case 4:
@@ -1365,7 +1370,7 @@ void transferYToAccumulator(CPU *cpu) {
 
 void executeInstruction(CPU *cpu) {
   uint8_t instruction = readBus(cpu, cpu->PC);
-  printf("PC: 0x%04x. Instruction: 0x%02x. ", cpu->PC, instruction);
+  printf("PC: 0x%04x Instruction: 0x%02x ", cpu->PC, instruction);
   cpu->PC++;
   switch (instruction) {
   case (0x00):
@@ -1979,6 +1984,13 @@ void executeInstruction(CPU *cpu) {
 }
 
 void execute(CPU *cpu) {
+  // fetch init vector, and set PT to its value
+  uint16_t ll = readBus(cpu, cpu->PC);
+  cpu->PC++;
+  uint16_t hh = readBus(cpu, cpu->PC);
+  uint16_t result = (hh << 8) + ll;
+  printf("INIT VECTOR: 0x%02x\n", result);
+  cpu->PC = result;
   while (true) {
     executeInstruction(cpu);
     getchar();
