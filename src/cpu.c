@@ -27,7 +27,7 @@ void pushStack(CPU *cpu, uint8_t value) {
 
 uint8_t popStack(CPU *cpu) {
   if (cpu->S == 0xFF) {
-    printf("ERROR: Stack underflow detected!");
+    printf("ERROR: Stack underflow detected!\n");
   }
   cpu->S++;
   return cpu->Memory[(cpu->S - 1) + 0x0100];
@@ -86,6 +86,7 @@ void setAndPrintMapper(CPU *cpu, uint8_t mapperNumber) {
 // Fetches instruction from memory at PC location, and increments PC
 uint8_t fetchInstructionByte(CPU *cpu) {
   uint8_t instruction = readBus(cpu, cpu->PC);
+  printf("\n Fetched: 0x%02x ", instruction);
   cpu->PC++;
   return instruction;
 }
@@ -1370,7 +1371,17 @@ void transferYToAccumulator(CPU *cpu) {
 
 void executeInstruction(CPU *cpu) {
   uint8_t instruction = readBus(cpu, cpu->PC);
-  printf("PC: 0x%04x Instruction: 0x%02x ", cpu->PC, instruction);
+  printf("PC: 0x%04x ", cpu->PC);
+  printf("NESMEM: 0x%04x ", cpu->PC - 0xBFF0);
+  printf("Instruction: 0x%02x ", instruction);
+  printf("N:%d ", (cpu->P & 0x80) >> 7);
+  printf("V:%d ", (cpu->P & 0x40) >> 6);
+  printf("U:%d ", (cpu->P & 0x20) >> 5);
+  printf("B:%d ", (cpu->P & 0x10) >> 4);
+  printf("D:%d ", (cpu->P & 0x08) >> 3);
+  printf("I:%d ", (cpu->P & 0x04) >> 2);
+  printf("Z:%d ", (cpu->P & 0x02) >> 1);
+  printf("C:%d ", cpu->P & 0x01);
   cpu->PC++;
   switch (instruction) {
   case (0x00):
