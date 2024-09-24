@@ -1,1 +1,2 @@
 void resetInputBuffer();
+int countMatchingFiles();
