@@ -1,2 +1,2 @@
 void resetInputBuffer();
-int countMatchingFiles();
+int countMatchingFiles(char *directory, char *match);
