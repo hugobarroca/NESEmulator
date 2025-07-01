@@ -1,0 +1,26 @@
+[
+{
+  "directory": "/home/scald/repos/NESEmulator/src",
+  "command": "/sbin/cc  -I/usr/include/SDL2 -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/harfbuzz -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/sysprof-6  -g -o CMakeFiles/emulator.out.dir/main.c.o -c /home/scald/repos/NESEmulator/src/main.c",
+  "file": "/home/scald/repos/NESEmulator/src/main.c",
+  "output": "CMakeFiles/emulator.out.dir/main.c.o"
+},
+{
+  "directory": "/home/scald/repos/NESEmulator/src",
+  "command": "/sbin/cc  -I/usr/include/SDL2 -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/harfbuzz -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/sysprof-6  -g -o CMakeFiles/emulator.out.dir/cpu.c.o -c /home/scald/repos/NESEmulator/src/cpu.c",
+  "file": "/home/scald/repos/NESEmulator/src/cpu.c",
+  "output": "CMakeFiles/emulator.out.dir/cpu.c.o"
+},
+{
+  "directory": "/home/scald/repos/NESEmulator/src",
+  "command": "/sbin/cc  -I/usr/include/SDL2 -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/harfbuzz -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/sysprof-6  -g -o CMakeFiles/emulator.out.dir/utilities.c.o -c /home/scald/repos/NESEmulator/src/utilities.c",
+  "file": "/home/scald/repos/NESEmulator/src/utilities.c",
+  "output": "CMakeFiles/emulator.out.dir/utilities.c.o"
+},
+{
+  "directory": "/home/scald/repos/NESEmulator/src",
+  "command": "/sbin/cc  -I/usr/include/SDL2 -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/harfbuzz -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/sysprof-6  -g -o CMakeFiles/emulator.out.dir/emulator.c.o -c /home/scald/repos/NESEmulator/src/emulator.c",
+  "file": "/home/scald/repos/NESEmulator/src/emulator.c",
+  "output": "CMakeFiles/emulator.out.dir/emulator.c.o"
+}
+]

@@ -2,6 +2,7 @@
 #include "emulator.h"
 #include "utilities.h"
 #include <SDL.h>
+#include <SDL_ttf.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <string.h>
@@ -48,61 +49,64 @@ int welcomeScreen() {
   return 0;
 }
 
-int createWindow(){
-  if(SDL_Init(SDL_INIT_VIDEO) != 0){
+int createWindow() {
+  if (SDL_Init(SDL_INIT_VIDEO) != 0) {
     printf("SDL_Init failed: %s/n", SDL_GetError());
-	}
-	SDL_Window* window = SDL_CreateWindow(
-    "My SDL2 Window",
-    SDL_WINDOWPOS_CENTERED,
-    SDL_WINDOWPOS_CENTERED,
-		800,
-		600,
-		SDL_WINDOW_SHOWN
-		);
+  }
+  TTF_Init();
+  SDL_Window *window =
+      SDL_CreateWindow("My SDL2 Window", SDL_WINDOWPOS_CENTERED,
+                       SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_SHOWN);
 
-	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-	if(!renderer){
+  SDL_Renderer *renderer =
+      SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+  if (!renderer) {
     printf("SDL_CreateRenderer failed: %s\n", SDL_GetError());
-		SDL_DestroyWindow(window);
+    SDL_DestroyWindow(window);
     SDL_Quit();
     return 1;
-	}
-	if(!window){
+  }
+  if (!window) {
     printf("SDL_CreateWindow failed: %s`n", SDL_GetError());
-				SDL_Quit();
-				return 1;
-	}
+    SDL_Quit();
+    return 1;
+  }
 
-	int running = 1;
-	SDL_Event event;
+  int running = 1;
+  SDL_Event event;
 
-	while (running){
+  while (running) {
     while (SDL_PollEvent(&event)) {
-      if(event.type == SDL_QUIT){
-							running=0;
-			}
-		}
-		SDL_SetRenderDrawColor(renderer, 24, 26, 24, 255);
-		SDL_RenderClear(renderer);
+      if (event.type == SDL_QUIT) {
+        running = 0;
+      }
+    }
 
-		SDL_Rect rect = { 0, 500, 800, 100 };
-		SDL_SetRenderDrawColor(renderer, 100, 103, 100, 255);
-		SDL_RenderFillRect(renderer, &rect);
+    TTF_Font* Sans = TTF_OpenFont("Sans.ttf", 24);
+		SDL_Color White = {255, 255, 255};
+		SDL_Surface* surfaceMessage = TTF_RenderText_Solid(Sans, "Somethingaaa", White);
+		SDL_Texture* textureMessage = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
+
+    SDL_SetRenderDrawColor(renderer, 24, 26, 24, 255);
+    SDL_RenderClear(renderer);
+
+    SDL_Rect rect = {0, 500, 800, 100};
+    SDL_SetRenderDrawColor(renderer, 100, 103, 100, 255);
+    SDL_RenderFillRect(renderer, &rect);
+		SDL_RenderCopy(renderer, textureMessage, NULL, &rect);
 
     SDL_RenderPresent(renderer);
 
-		SDL_Delay(16);
-	}
+    SDL_Delay(16);
+  }
 
-	SDL_DestroyWindow(window);
-	SDL_Quit();
-	return 0;
-
+  SDL_DestroyWindow(window);
+  SDL_Quit();
+  return 0;
 }
 
 int main(int argc, char *argv[]) {
-createWindow();
+  createWindow();
   welcomeScreen();
   return 0;
 }

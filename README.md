@@ -3,7 +3,7 @@
 !WARNING: This project is still a work in progress!
 
 This is a personal project, intended to be used for practicing the C language, and programming in general.
-It's a (for the time being) naive implementation of a NTCS NES emulator (meaning the Ricoh 2A03 processor.
+It's a (for the time being) naive implementation of a NTCS NES emulator (meaning the Ricoh 2A03 processor).
 
 ## How to run this project
 
