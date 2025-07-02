@@ -79,43 +79,54 @@ int createWindow() {
   int running = 1;
   SDL_Event event;
 
+  // This, unsurprisingly, requires the path to actually point to a ttf file...
+  TTF_Font *Sans = TTF_OpenFont("Sans.ttf", 24);
+  SDL_Color White = {255, 255, 255};
+  SDL_Surface *surfaceMessage = TTF_RenderUTF8_Solid(
+      Sans, "Stack pointer: ", White);
+  if (surfaceMessage == NULL) {
+    printf("TTF_RenderUTF8_Solid failed: %s\n", TTF_GetError());
+  }
+
+  SDL_Texture *textureMessage =
+      SDL_CreateTextureFromSurface(renderer, surfaceMessage);
+
+  if (textureMessage == NULL) {
+    printf("SDL_CreateTextureFromSurface failed: %s\n", SDL_GetError());
+  }
+
+  SDL_SetRenderDrawColor(renderer, 24, 26, 24, 255);
+  SDL_RenderClear(renderer);
+
+  SDL_Rect rect = {0, 400, 800, 130};
+  SDL_SetRenderDrawColor(renderer, 100, 103, 100, 255);
+
+  int rw, rh;
+  SDL_GetRendererOutputSize(renderer, &rw, &rh);
+  printf("Renderer output size: %dx%d\n", rw, rh);
+	SDL_Rect border = { 0, rh - (rh/10), rw, rh/10};
+	SDL_Rect rect3 = { 5, rh - (rh/10) + 5, rw - 10, rh/10 - 10};
+	SDL_Rect label1 = { 20, rh - (rh/10) + 10, rw/6 - 10, rh/10 - 35};
+	//SDL_Rect label1 = { 10, rh - (rh/10) + 10, rw - 15, rh-10/2};
+  SDL_RenderFillRect(renderer, &border);
+  SDL_SetRenderDrawColor(renderer, 150, 150, 150, 255);
+  SDL_RenderFillRect(renderer, &rect3);
+  SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+  int renderSuccess = SDL_RenderCopy(renderer, textureMessage, NULL, &label1);
+  if (renderSuccess != 0) {
+    printf("SDL_RenderCopy failed: %s`n", TTF_GetError());
+    SDL_Quit();
+    return 1;
+  }
+
+  SDL_RenderPresent(renderer);
+
   while (running) {
     while (SDL_PollEvent(&event)) {
       if (event.type == SDL_QUIT) {
         running = 0;
       }
     }
-
-		// This, unsurprisingly, requires the path to actually point to a ttf file...
-    TTF_Font *Sans = TTF_OpenFont("Sans.ttf", 24);
-    SDL_Color White = {255, 255, 255};
-    SDL_Surface *surfaceMessage =
-        TTF_RenderUTF8_Solid(Sans, "Somethingaaa but it seems the size was perfect", White);
-		if (surfaceMessage == NULL){
-    printf("TTF_RenderUTF8_Solid failed: %s\n", TTF_GetError());
-		}
-
-    SDL_Texture *textureMessage =
-        SDL_CreateTextureFromSurface(renderer, surfaceMessage);
-
-		if (textureMessage == NULL){
-    printf("SDL_CreateTextureFromSurface failed: %s\n", SDL_GetError());
-		}
-
-    SDL_SetRenderDrawColor(renderer, 24, 26, 24, 255);
-    SDL_RenderClear(renderer);
-
-    SDL_Rect rect = {0, 400, 800, 200};
-    SDL_SetRenderDrawColor(renderer, 100, 103, 100, 255);
-    SDL_RenderFillRect(renderer, &rect);
-    int renderSuccess = SDL_RenderCopy(renderer, textureMessage, NULL, &rect);
-    if (renderSuccess != 0) {
-      printf("SDL_RenderCopy failed: %s`n", TTF_GetError());
-      SDL_Quit();
-      return 1;
-    }
-
-    SDL_RenderPresent(renderer);
 
     SDL_Delay(16);
   }
