@@ -2,3 +2,5 @@ assemblyTests/*
 *.out
 */Roms/*
 *.nes
+*/build/*
+*/.cache/*
