@@ -53,7 +53,11 @@ int createWindow() {
   if (SDL_Init(SDL_INIT_VIDEO) != 0) {
     printf("SDL_Init failed: %s/n", SDL_GetError());
   }
-  TTF_Init();
+
+  if (TTF_Init() != 0) {
+    printf("TTF_Init failed: %s/n", TTF_GetError());
+  }
+
   SDL_Window *window =
       SDL_CreateWindow("My SDL2 Window", SDL_WINDOWPOS_CENTERED,
                        SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_SHOWN);
@@ -82,18 +86,34 @@ int createWindow() {
       }
     }
 
-    TTF_Font* Sans = TTF_OpenFont("Sans.ttf", 24);
-		SDL_Color White = {255, 255, 255};
-		SDL_Surface* surfaceMessage = TTF_RenderText_Solid(Sans, "Somethingaaa", White);
-		SDL_Texture* textureMessage = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
+		// This, unsurprisingly, requires the path to actually point to a ttf file...
+    TTF_Font *Sans = TTF_OpenFont("Sans.ttf", 24);
+    SDL_Color White = {255, 255, 255};
+    SDL_Surface *surfaceMessage =
+        TTF_RenderUTF8_Solid(Sans, "Somethingaaa but it seems the size was perfect", White);
+		if (surfaceMessage == NULL){
+    printf("TTF_RenderUTF8_Solid failed: %s\n", TTF_GetError());
+		}
+
+    SDL_Texture *textureMessage =
+        SDL_CreateTextureFromSurface(renderer, surfaceMessage);
+
+		if (textureMessage == NULL){
+    printf("SDL_CreateTextureFromSurface failed: %s\n", SDL_GetError());
+		}
 
     SDL_SetRenderDrawColor(renderer, 24, 26, 24, 255);
     SDL_RenderClear(renderer);
 
-    SDL_Rect rect = {0, 500, 800, 100};
+    SDL_Rect rect = {0, 400, 800, 200};
     SDL_SetRenderDrawColor(renderer, 100, 103, 100, 255);
     SDL_RenderFillRect(renderer, &rect);
-		SDL_RenderCopy(renderer, textureMessage, NULL, &rect);
+    int renderSuccess = SDL_RenderCopy(renderer, textureMessage, NULL, &rect);
+    if (renderSuccess != 0) {
+      printf("SDL_RenderCopy failed: %s`n", TTF_GetError());
+      SDL_Quit();
+      return 1;
+    }
 
     SDL_RenderPresent(renderer);
 
@@ -107,6 +127,6 @@ int createWindow() {
 
 int main(int argc, char *argv[]) {
   createWindow();
-  welcomeScreen();
+  // welcomeScreen();
   return 0;
 }
