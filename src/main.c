@@ -7,11 +7,12 @@
 #include <stdio.h>
 #include <string.h>
 
+int commandInteger;
+char c;
+CPU cpu;
+DIR *d;
+
 int welcomeScreen() {
-  int commandInteger;
-  char c;
-  CPU cpu;
-  DIR *d;
   struct dirent *dir;
   d = opendir(".");
 
@@ -82,8 +83,8 @@ int createWindow() {
   // This, unsurprisingly, requires the path to actually point to a ttf file...
   TTF_Font *Sans = TTF_OpenFont("Sans.ttf", 24);
   SDL_Color White = {255, 255, 255};
-  SDL_Surface *surfaceMessage = TTF_RenderUTF8_Solid(
-      Sans, "Stack pointer: ", White);
+  SDL_Surface *surfaceMessage =
+      TTF_RenderUTF8_Solid(Sans, "Stack pointer: ", White);
   if (surfaceMessage == NULL) {
     printf("TTF_RenderUTF8_Solid failed: %s\n", TTF_GetError());
   }
@@ -104,10 +105,10 @@ int createWindow() {
   int rw, rh;
   SDL_GetRendererOutputSize(renderer, &rw, &rh);
   printf("Renderer output size: %dx%d\n", rw, rh);
-	SDL_Rect border = { 0, rh - (rh/10), rw, rh/10};
-	SDL_Rect rect3 = { 5, rh - (rh/10) + 5, rw - 10, rh/10 - 10};
-	SDL_Rect label1 = { 20, rh - (rh/10) + 10, rw/6 - 10, rh/10 - 35};
-	//SDL_Rect label1 = { 10, rh - (rh/10) + 10, rw - 15, rh-10/2};
+  SDL_Rect border = {0, rh - (rh / 10), rw, rh / 10};
+  SDL_Rect rect3 = {5, rh - (rh / 10) + 5, rw - 10, rh / 10 - 10};
+  SDL_Rect label1 = {20, rh - (rh / 10) + 10, rw / 6 - 10, rh / 10 - 35};
+  // SDL_Rect label1 = { 10, rh - (rh/10) + 10, rw - 15, rh-10/2};
   SDL_RenderFillRect(renderer, &border);
   SDL_SetRenderDrawColor(renderer, 150, 150, 150, 255);
   SDL_RenderFillRect(renderer, &rect3);
@@ -137,7 +138,7 @@ int createWindow() {
 }
 
 int main(int argc, char *argv[]) {
+  welcomeScreen();
   createWindow();
-  // welcomeScreen();
   return 0;
 }
