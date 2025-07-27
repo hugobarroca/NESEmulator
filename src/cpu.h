@@ -4,8 +4,11 @@ typedef struct CPU CPU;
 typedef uint8_t (*ReadBus)(CPU *, uint16_t);
 
 struct CPU {
+  // Accumulator
   uint8_t A;
+  // Register X
   uint8_t X;
+  // Register Y
   uint8_t Y;
   // Processor Status
   // 7 Negative Flag (N)
@@ -18,6 +21,7 @@ struct CPU {
   // 0 Carry Flag (C)
   uint8_t P;
   uint8_t S;
+	// Program Counter
   uint16_t PC;
   // 64KiB, full address space, with the following mapping:
   // 0x0000-0x07FF is the actual RAM addresses, and then they are mirrored 3

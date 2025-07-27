@@ -93,12 +93,12 @@ void readGameHeader(CPU *cpu) {
   printf("RIPPER NAME: %.5s\n", ripper);
 }
 
-void loadGame(CPU *cpu, char fileName[]) {
+void* loadGame(CPU *cpu, char fileName[]) {
   printf("Attempting to load game: %s\n", fileName);
   FILE *file = fopen(fileName, "rb");
   if (file == NULL) {
     printf("File not found.\n");
-    return;
+    return NULL;
   }
   printf("Opened the file successfully.\n");
   //

@@ -4,15 +4,17 @@
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <dirent.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 int commandInteger;
 char c;
 CPU cpu;
 DIR *d;
 
-int welcomeScreen() {
+void *welcomeScreen() {
   struct dirent *dir;
   d = opendir(".");
 
@@ -50,7 +52,12 @@ int welcomeScreen() {
   return 0;
 }
 
-int createWindow() {
+void appendIntToString(char *prefix, int value, char *target) {
+  snprintf(target, sizeof(target), "%s%d", prefix, value);
+}
+
+void *createWindow(void *arg) {
+
   if (SDL_Init(SDL_INIT_VIDEO) != 0) {
     printf("SDL_Init failed: %s/n", SDL_GetError());
   }
@@ -69,12 +76,12 @@ int createWindow() {
     printf("SDL_CreateRenderer failed: %s\n", SDL_GetError());
     SDL_DestroyWindow(window);
     SDL_Quit();
-    return 1;
+    return NULL;
   }
   if (!window) {
     printf("SDL_CreateWindow failed: %s`n", SDL_GetError());
     SDL_Quit();
-    return 1;
+    return NULL;
   }
 
   int running = 1;
@@ -83,6 +90,13 @@ int createWindow() {
   // This, unsurprisingly, requires the path to actually point to a ttf file...
   TTF_Font *Sans = TTF_OpenFont("Sans.ttf", 24);
   SDL_Color White = {255, 255, 255};
+
+  char result[100];
+  //appendIntToString("Stack pointer: ", cpu.PC, result);
+  // SDL_Surface *surfaceMessage =
+      TTF_RenderUTF8_Solid(Sans, result, White);
+
+
   SDL_Surface *surfaceMessage =
       TTF_RenderUTF8_Solid(Sans, "Stack pointer: ", White);
   if (surfaceMessage == NULL) {
@@ -117,7 +131,7 @@ int createWindow() {
   if (renderSuccess != 0) {
     printf("SDL_RenderCopy failed: %s`n", TTF_GetError());
     SDL_Quit();
-    return 1;
+    return NULL;
   }
 
   SDL_RenderPresent(renderer);
@@ -137,8 +151,25 @@ int createWindow() {
   return 0;
 }
 
-int main(int argc, char *argv[]) {
-  welcomeScreen();
-  createWindow();
+struct ThreadArgs {
+  struct CPU *cpu;
+};
+
+void *loadAndTestGame(void *arg) {
+  struct ThreadArgs *args = (struct ThreadArgs *)arg;
+  char gameName[] = "dk";
+  loadGame(args->cpu, gameName);
+  return NULL;
+}
+
+void *initHardwareAndUi() {
+  pthread_t thread1;
+  struct ThreadArgs *args = malloc(sizeof(struct ThreadArgs));
+  args->cpu = &cpu;
+
+  pthread_create(&thread1, NULL, loadAndTestGame, &args);
+  createWindow(NULL);
   return 0;
 }
+
+int main(int argc, char *argv[]) { initHardwareAndUi(); }
