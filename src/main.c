@@ -10,26 +10,26 @@
 #include <unistd.h>
 
 int commandInteger;
-char c;
+char userSelection;
 CPU cpu;
-DIR *d;
+DIR *userDir;
 
 void *welcomeScreen() {
   struct dirent *dir;
-  d = opendir(".");
+  userDir = opendir(".");
 
   for (;;) {
     printf("Welcome to NESEmulator! Please select an option:\n");
     printf("0. Quit.\n");
     printf("1. Load game.\n");
-    c = getchar();
-    if (c == '0') {
+    userSelection = getchar();
+    if (userSelection == '0') {
       printf("Exiting program!\n");
       return 0;
     }
-    if (c == '1') {
+    if (userSelection == '1') {
       printf("Please type the name of the game you wish to load.\n");
-      while ((dir = readdir(d)) != NULL) {
+      while ((dir = readdir(userDir)) != NULL) {
         if (dir->d_name[0] != '.') {
           printf("%s\n", dir->d_name);
         }
@@ -56,14 +56,25 @@ void appendIntToString(char *prefix, int value, char *target) {
   snprintf(target, sizeof(target), "%s%d", prefix, value);
 }
 
-void *createWindow(void *arg) {
-
+int checkInitErrors() {
   if (SDL_Init(SDL_INIT_VIDEO) != 0) {
     printf("SDL_Init failed: %s/n", SDL_GetError());
+    return 1;
   }
 
   if (TTF_Init() != 0) {
     printf("TTF_Init failed: %s/n", TTF_GetError());
+    return 1;
+  }
+
+  return 0;
+}
+
+void *createWindow(void *arg) {
+  int isInitSuccess = checkInitErrors();
+
+  if (isInitSuccess != 0) {
+    return NULL;
   }
 
   SDL_Window *window =
@@ -72,6 +83,7 @@ void *createWindow(void *arg) {
 
   SDL_Renderer *renderer =
       SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+
   if (!renderer) {
     printf("SDL_CreateRenderer failed: %s\n", SDL_GetError());
     SDL_DestroyWindow(window);
@@ -92,21 +104,39 @@ void *createWindow(void *arg) {
   SDL_Color White = {255, 255, 255};
 
   char result[100];
-  //appendIntToString("Stack pointer: ", cpu.PC, result);
-  // SDL_Surface *surfaceMessage =
-      TTF_RenderUTF8_Solid(Sans, result, White);
+  // appendIntToString("Stack pointer: ", cpu.PC, result);
+  //  SDL_Surface *surfaceMessage =
+  TTF_RenderUTF8_Solid(Sans, result, White);
 
+  char message[256] = "Stack pointer: ";
+  char buffer[256];
+  snprintf(buffer, sizeof(buffer), "%u", getStackPointerValue(&cpu));
+  strncat(message, buffer, sizeof(message) - strlen(message) - 1);
 
-  SDL_Surface *surfaceMessage =
-      TTF_RenderUTF8_Solid(Sans, "Stack pointer: ", White);
+  char currInstMessage[256] = "Current instruction: ";
+  char secBuf[256];
+  snprintf(secBuf, sizeof(secBuf), "%u", getCurrentInstruction(&cpu));
+  strncat(currInstMessage, secBuf,
+          sizeof(currInstMessage) - strlen(currInstMessage) - 1);
+
+  SDL_Surface *surfaceMessage = TTF_RenderUTF8_Solid(Sans, message, White);
   if (surfaceMessage == NULL) {
     printf("TTF_RenderUTF8_Solid failed: %s\n", TTF_GetError());
   }
 
-  SDL_Texture *textureMessage =
+  SDL_Surface *currIntSurfaceMessage =
+      TTF_RenderUTF8_Solid(Sans, currInstMessage, White);
+  if (currIntSurfaceMessage == NULL) {
+    printf("TTF_RenderUTF8_Solid failed: %s\n", TTF_GetError());
+  }
+
+  SDL_Texture *topStackValueTexture =
       SDL_CreateTextureFromSurface(renderer, surfaceMessage);
 
-  if (textureMessage == NULL) {
+  SDL_Texture *currInstTexture =
+      SDL_CreateTextureFromSurface(renderer, currIntSurfaceMessage);
+
+  if (topStackValueTexture == NULL) {
     printf("SDL_CreateTextureFromSurface failed: %s\n", SDL_GetError());
   }
 
@@ -119,15 +149,29 @@ void *createWindow(void *arg) {
   int rw, rh;
   SDL_GetRendererOutputSize(renderer, &rw, &rh);
   printf("Renderer output size: %dx%d\n", rw, rh);
-  SDL_Rect border = {0, rh - (rh / 10), rw, rh / 10};
-  SDL_Rect rect3 = {5, rh - (rh / 10) + 5, rw - 10, rh / 10 - 10};
-  SDL_Rect label1 = {20, rh - (rh / 10) + 10, rw / 6 - 10, rh / 10 - 35};
-  // SDL_Rect label1 = { 10, rh - (rh/10) + 10, rw - 15, rh-10/2};
-  SDL_RenderFillRect(renderer, &border);
+
+  SDL_Rect footerBorder = {0, rh - (rh / 10), rw, rh / 10};
+  SDL_Rect footerInnerRect = {5, rh - (rh / 10) + 5, rw - 10, rh / 10 - 10};
+
+  int xPosition, yPosition, width, height;
+  xPosition = 20;
+  yPosition = rh - (rh / 10) + 10;
+  width = rw / 6 - 10;
+	height = rh / 10 - 35;
+
+  SDL_Rect stackLabel = {xPosition, yPosition, width, height};
+  SDL_Rect currentInstructionLabel = {xPosition + width + 5, yPosition, width, height};
+
+  SDL_RenderFillRect(renderer, &footerBorder);
   SDL_SetRenderDrawColor(renderer, 150, 150, 150, 255);
-  SDL_RenderFillRect(renderer, &rect3);
+
+  SDL_RenderFillRect(renderer, &footerInnerRect);
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-  int renderSuccess = SDL_RenderCopy(renderer, textureMessage, NULL, &label1);
+  int renderSuccess =
+      SDL_RenderCopy(renderer, topStackValueTexture, NULL, &stackLabel);
+
+  int renderSuccess2 =
+      SDL_RenderCopy(renderer, currInstTexture, NULL, &currentInstructionLabel);
   if (renderSuccess != 0) {
     printf("SDL_RenderCopy failed: %s`n", TTF_GetError());
     SDL_Quit();
@@ -163,6 +207,7 @@ void *loadAndTestGame(void *arg) {
 }
 
 void *initHardwareAndUi() {
+  // Using one thread for the UI, one for the emulator (for now)
   pthread_t thread1;
   struct ThreadArgs *args = malloc(sizeof(struct ThreadArgs));
   args->cpu = &cpu;

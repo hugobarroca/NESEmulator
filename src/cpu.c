@@ -25,6 +25,14 @@ void pushStack(CPU *cpu, uint8_t value) {
   cpu->S--;
 }
 
+uint8_t getStackPointerValue(CPU *cpu) { return cpu->Memory[cpu->S]; }
+
+uint8_t getCurrentInstruction(CPU *cpu) {
+  uint8_t currentInstruction = cpu->Memory[cpu->PC];
+  printf("Returned current instruction \"%u\".", currentInstruction);
+  return currentInstruction;
+}
+
 uint8_t popStack(CPU *cpu) {
   if (cpu->S == 0xFF) {
     printf("ERROR: Stack underflow detected!\n");

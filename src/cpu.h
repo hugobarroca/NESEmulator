@@ -21,18 +21,20 @@ struct CPU {
   // 0 Carry Flag (C)
   uint8_t P;
   uint8_t S;
-	// Program Counter
+  // Program Counter
   uint16_t PC;
   // 64KiB, full address space, with the following mapping:
   // 0x0000-0x07FF is the actual RAM addresses, and then they are mirrored 3
   // times, till 0x1FFF
   uint8_t Memory[65536];
-  // Emulater specific fields
+  // Emulator specific fields
   uint8_t *GameData;
   uint8_t MapperType;
   ReadBus ReadBus;
 };
 
 void initProcessor(CPU *cpu);
+uint8_t getStackPointerValue(CPU *cpu);
+uint8_t getCurrentInstruction(CPU *cpu);
 void setAndPrintMapper(CPU *cpu, uint8_t mapperNumber);
 void execute(CPU *cpu);
