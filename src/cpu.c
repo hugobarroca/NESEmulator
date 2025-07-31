@@ -4,6 +4,17 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#define NUMBER_OF_INSTRUCTIONS 256
+
+// Global variables
+
+typedef struct {
+  void (*execute)(CPU *cpu);
+  char name[20];
+} Instruction;
+
+Instruction instructions[NUMBER_OF_INSTRUCTIONS] = {};
+
 void initProcessor(CPU *cpu) {
   cpu->A = 0;
   cpu->X = 0;
@@ -1377,630 +1388,945 @@ void transferYToAccumulator(CPU *cpu) {
   cpu->A = result;
 }
 
-void executeInstruction(CPU *cpu) {
-  uint8_t instruction = readBus(cpu, cpu->PC);
-  printf("PC: 0x%04x ", cpu->PC);
-  printf("NESMEM: 0x%04x ", cpu->PC - 0xBFF0);
-  printf("Instruction: 0x%02x ", instruction);
-  printf("N:%d ", (cpu->P & 0x80) >> 7);
-  printf("V:%d ", (cpu->P & 0x40) >> 6);
-  printf("U:%d ", (cpu->P & 0x20) >> 5);
-  printf("B:%d ", (cpu->P & 0x10) >> 4);
-  printf("D:%d ", (cpu->P & 0x08) >> 3);
-  printf("I:%d ", (cpu->P & 0x04) >> 2);
-  printf("Z:%d ", (cpu->P & 0x02) >> 1);
-  printf("C:%d ", cpu->P & 0x01);
-  cpu->PC++;
-  switch (instruction) {
-  case (0x00):
-    printf("BRK");
-    forceBreak(cpu);
-    break;
-  case (0x01):
-    printf("ORA (oper,X)");
-    orAIndirectX(cpu);
-    break;
-  case (0x05):
-    printf("ORA oper");
-    orAZeroPage(cpu);
-    break;
-  case (0x06):
-    printf("ASL oper");
-    arithmeticShiftLeftZeroPage(cpu);
-    break;
-  case (0x08):
-    printf("PHP");
-    pushProcessorStatusOnStack(cpu);
-    break;
-  case (0x09):
-    printf("ORA #oper");
-    orAImmediate(cpu);
-    break;
-  case (0x0A):
-    printf("ASL");
-    arithmeticShiftLeftAccumulator(cpu);
-    break;
-  case (0x0D):
-    printf("ORA oper");
-    orAAbsolute(cpu);
-    break;
-  case (0x0E):
-    printf("ASL opr");
-    arithmeticShiftLeftAbsolute(cpu);
-    break;
-  case (0x10):
-    printf("BPL oper");
-    branchOnPlusRelative(cpu);
-    break;
-  case (0x11):
-    printf("ORA (oper),Y");
-    orAIndirectY(cpu);
-    break;
-  case (0x15):
-    printf("ORA oper,X");
-    orAZeroPageX(cpu);
-    break;
-  case (0x16):
-    printf("ASL oper,X");
-    arithmeticShiftLeftZeroPageX(cpu);
-    break;
-  case (0x18):
-    printf("CLC");
-    clearCarry(cpu);
-    break;
-  case (0x19):
-    printf("ORA oper,Y");
-    orAAbsoluteY(cpu);
-    break;
-  case (0x1D):
-    printf("ORA oper,X");
-    orAAbsoluteX(cpu);
-    break;
-  case (0x1E):
-    printf("ASL oper,X");
-    arithmeticShiftLeftAbsoluteX(cpu);
-    break;
-  case (0x20):
-    printf("JSR");
-    jumpSubRoutineAbsolute(cpu);
-    break;
-  case (0x21):
-    printf("AND (oper,X)");
-    andIndirectX(cpu);
-    break;
-  case (0x24):
-    printf("BIT oper");
-    bitTestZeroPage(cpu);
-    break;
-  case (0x25):
-    printf("AND oper");
-    andZeroPage(cpu);
-    break;
-  case (0x26):
-    printf("ROL oper");
-    rotateLeftZeroPage(cpu);
-    break;
-  case (0x28):
-    printf("PLP");
-    pullProcessorStatusFromStack(cpu);
-    break;
-  case (0x29):
-    printf("AND #oper");
-    andImmediate(cpu);
-    break;
-  case (0x2A):
-    printf("ROL A");
-    rotateLeftAccumulator(cpu);
-    break;
-  case (0x2C):
-    printf("BIT oper");
-    bitTestAbsolute(cpu);
-    break;
-  case (0x2D):
-    printf("AND oper");
-    andAbsolute(cpu);
-    break;
-  case (0x2E):
-    printf("ROL oper");
-    rotateLeftAbsolute(cpu);
-    break;
-  case (0x30):
-    printf("BMI");
-    branchOnMinusRelative(cpu);
-    break;
-  case (0x31):
-    printf("AND (oper),Y");
-    andIndirectY(cpu);
-    break;
-  case (0x35):
-    printf("AND oper,X");
-    andZeroPageX(cpu);
-    break;
-  case (0x36):
-    printf("ROL oper,X");
-    rotateLeftZeroPageX(cpu);
-    break;
-  case (0x38):
-    printf("SEC");
-    setCarry(cpu);
-    break;
-  case (0x39):
-    printf("AND oper,Y");
-    andAbsoluteY(cpu);
-    break;
-  case (0x3D):
-    printf("AND oper,X");
-    andAbsoluteX(cpu);
-    break;
-  case (0x3E):
-    printf("ROL oper,X");
-    rotateLeftAbsoluteX(cpu);
-    break;
-  case (0x40):
-    printf("RTI");
-    returnFromInterrupt(cpu);
-    break;
-  case (0x41):
-    printf("EOR (oper,X)");
-    exclusiveOrIndirectX(cpu);
-    break;
-  case (0x45):
-    printf("EOR oper");
-    exclusiveOrZeroPage(cpu);
-    break;
-  case (0x46):
-    printf("LSR oper");
-    logisticalShiftRightZeroPage(cpu);
-    break;
-  case (0x48):
-    printf("PHA");
-    pushAccumulatorOntoStack(cpu);
-    break;
-  case (0x49):
-    printf("EOR #oper");
-    exclusiveOrImmediate(cpu);
-    break;
-  case (0x4A):
-    printf("LSR A");
-    logisticalShiftRightAccumulator(cpu);
-    break;
-  case (0x4C):
-    printf("JMP");
-    jumpAbsolute(cpu);
-    break;
-  case (0x4D):
-    printf("EOR oper");
-    exclusiveOrAbsolute(cpu);
-    break;
-  case (0x4E):
-    printf("LSR oper");
-    logisticalShiftRightAbsolute(cpu);
-    break;
-  case (0x50):
-    printf("BVC oper");
-    branchOnOverflowClearRelative(cpu);
-    break;
-  case (0x51):
-    printf("EOR (oper),Y");
-    exclusiveOrIndirectY(cpu);
-    break;
-  case (0x55):
-    printf("EOR oper,X");
-    exclusiveOrZeroPageX(cpu);
-    break;
-  case (0x56):
-    printf("LSR oper,X");
-    logisticalShiftRightZeroPageX(cpu);
-    break;
-  case (0x58):
-    printf("CLI");
-    clearInterruptDisable(cpu);
-    break;
-  case (0x59):
-    printf("EOR oper,Y");
-    exclusiveOrAbsoluteY(cpu);
-    break;
-  case (0x5D):
-    printf("EOR oper,X");
-    exclusiveOrAbsoluteX(cpu);
-    break;
-  case (0x5E):
-    printf("LSR oper,X");
-    logisticalShiftRightAbsoluteX(cpu);
-    break;
-  case (0x60):
-    printf("RTS");
-    returnFromSubroutine(cpu);
-    break;
-  case (0x61):
-    printf("ADC (oper,X)");
-    addWithCarryIndirectX(cpu);
-    break;
-  case (0x65):
-    printf("ADC oper");
-    addWithCarryZeroPage(cpu);
-    break;
-  case (0x66):
-    printf("ROR oper");
-    rotateRightZeroPage(cpu);
-    break;
-  case (0x68):
-    printf("PLA");
-    pullAccumulatorFromStack(cpu);
-    break;
-  case (0x69):
-    printf("ADC #oper");
-    addWithCarryImmediate(cpu);
-    break;
-  case (0x6A):
-    printf("ROR A");
-    rotateRightAccumulator(cpu);
-    break;
-  case (0x6C):
-    printf("JMP (oper)");
-    jumpIndirect(cpu);
-    break;
-  case (0x6D):
-    printf("ADC oper");
-    addWithCarryAbsolute(cpu);
-    break;
-  case (0x6E):
-    printf("ROR oper");
-    rotateRightAbsolute(cpu);
-    break;
-  case (0x70):
-    printf("BVS");
-    branchOnOverflowSetRelative(cpu);
-    break;
-  case (0x71):
-    printf("ADC (oper),Y");
-    addWithCarryIndirectY(cpu);
-    break;
-  case (0x75):
-    printf("ADC oper,X");
-    addWithCarryZeroPageX(cpu);
-    break;
-  case (0x76):
-    printf("ROR oper,X");
-    rotateRightZeroPageX(cpu);
-    break;
-  case (0x78):
-    printf("SEI");
-    setInterruptDisable(cpu);
-    break;
-  case (0x79):
-    printf("ADC oper,Y");
-    addWithCarryAbsoluteY(cpu);
-    break;
-  case (0x7D):
-    printf("ADC oper,X");
-    addWithCarryAbsoluteX(cpu);
-    break;
-  case (0x7E):
-    printf("ROR oper,X");
-    rotateRightAbsoluteX(cpu);
-    break;
-  case (0x81):
-    printf("STA (oper,X)");
-    storeAccumulatorIndirectX(cpu);
-    break;
-  case (0x84):
-    printf("STY oper");
-    storeYZeroPage(cpu);
-    break;
-  case (0x85):
-    printf("STA oper");
-    storeAccumulatorZeroPage(cpu);
-    break;
-  case (0x86):
-    printf("STX oper");
-    storeXZeroPage(cpu);
-    break;
-  case (0x88):
-    printf("DEY");
-    decrementY(cpu);
-    break;
-  case (0x8A):
-    printf("TXA");
-    transferXToAccumulator(cpu);
-    break;
-  case (0x8C):
-    printf("STY oper");
-    storeYAbsolute(cpu);
-    break;
-  case (0x8D):
-    printf("STA oper");
-    storeAccumulatorAbsolute(cpu);
-    break;
-  case (0x8E):
-    printf("STX oper");
-    storeXAbsolute(cpu);
-    break;
-  case (0x90):
-    printf("BCC oper");
-    branchOnClearCarryRelative(cpu);
-    break;
-  case (0x91):
-    printf("STA (oper),Y");
-    storeAccumulatorIndirectY(cpu);
-    break;
-  case (0x94):
-    printf("STY oper,X");
-    storeYZeroPageX(cpu);
-    break;
-  case (0x95):
-    printf("STA oper,X");
-    storeAccumulatorZeroPageX(cpu);
-    break;
-  case (0x96):
-    printf("STX oper,Y");
-    storeXZeroPageY(cpu);
-    break;
-  case (0x98):
-    printf("TYA");
-    transferYToAccumulator(cpu);
-    break;
-  case (0x99):
-    printf("STA oper,Y");
-    storeAccumulatorAbsoluteY(cpu);
-    break;
-  case (0x9A):
-    printf("TXS");
-    transferXToStackPointer(cpu);
-    break;
-  case (0x9D):
-    printf("STA oper,X");
-    storeAccumulatorAbsoluteX(cpu);
-    break;
-  case (0xA0):
-    printf("LDY #oper");
-    loadYImmediate(cpu);
-    break;
-  case (0xA1):
-    printf("LDA (oper,X)");
-    loadAccumulatorIndirectX(cpu);
-    break;
-  case (0xA2):
-    printf("LDX #oper");
-    loadXImmediate(cpu);
-    break;
-  case (0xA4):
-    printf("LDY oper");
-    loadYZeroPage(cpu);
-    break;
-  case (0xA5):
-    printf("LDA oper");
-    loadAccumulatorZeroPage(cpu);
-    break;
-  case (0xA6):
-    printf("LDX oper");
-    loadXZeroPage(cpu);
-    break;
-  case (0xA8):
-    printf("TAY");
-    transferAccumulatorToY(cpu);
-    break;
-  case (0xA9):
-    printf("LDA #oper");
-    loadAccumulatorImmediate(cpu);
-    break;
-  case (0xAA):
-    printf("TAX");
-    transferAccumulatorToX(cpu);
-    break;
-  case (0xAC):
-    printf("LDY oper");
-    loadYAbsolute(cpu);
-    break;
-  case (0xAD):
-    printf("LDA oper");
-    loadAccumulatorAbsolute(cpu);
-    break;
-  case (0xAE):
-    printf("LDX oper");
-    loadXAbsolute(cpu);
-    break;
-  case (0xB0):
-    printf("BCS oper");
-    branchOnCarrySetRelative(cpu);
-    break;
-  case (0xB1):
-    printf("LDA (oper),Y");
-    loadAccumulatorIndirectY(cpu);
-    break;
-  case (0xB4):
-    printf("LDY oper,X");
-    loadYZeroPageX(cpu);
-    break;
-  case (0xB5):
-    printf("LDA oper,X");
-    loadAccumulatorZeroPageX(cpu);
-    break;
-  case (0xB6):
-    printf("LDX oper,Y");
-    loadXZeroPageY(cpu);
-    break;
-  case (0xB8):
-    printf("CLV");
-    clearOverflow(cpu);
-    break;
-  case (0xB9):
-    printf("LDA oper,Y");
-    loadAccumulatorAbsoluteY(cpu);
-    break;
-  case (0xBA):
-    printf("TSX");
-    transferStackPointerToX(cpu);
-    break;
-  case (0xBC):
-    printf("LDY oper,X");
-    loadYAbsoluteX(cpu);
-    break;
-  case (0xBD):
-    printf("LDA oper,X");
-    loadAccumulatorAbsoluteX(cpu);
-    break;
-  case (0xBE):
-    printf("LDX oper,Y");
-    loadXAbsoluteY(cpu);
-    break;
-  case (0xC0):
-    printf("CPY #oper");
-    compareWithYImmediate(cpu);
-    break;
-  case (0xC1):
-    printf("CMP (oper,X)");
-    compareWithAccumulatorIndirectX(cpu);
-    break;
-  case (0xC4):
-    printf("CPY oper");
-    compareWithYZeroPage(cpu);
-    break;
-  case (0xC5):
-    printf("CMP oper");
-    compareWithAccumulatorZeroPage(cpu);
-    break;
-  case (0xC6):
-    printf("DEC oper");
-    decrementZeroPage(cpu);
-    break;
-  case (0xC8):
-    printf("INY");
-    incrementY(cpu);
-    break;
-  case (0xC9):
-    printf("CMP #oper");
-    compareWithAccumulatorImmediate(cpu);
-    break;
-  case (0xCA):
-    printf("DEX");
-    decrementX(cpu);
-    break;
-  case (0xCC):
-    printf("CPY oper");
-    compareWithYAbsolute(cpu);
-    break;
-  case (0xCD):
-    printf("CMP oper");
-    compareWithAccumulatorAbsolute(cpu);
-    break;
-  case (0xCE):
-    printf("DEC oper");
-    decrementAbsolute(cpu);
-    break;
-  case (0xD0):
-    printf("BNE oper");
-    branchOnNotEqualRelative(cpu);
-    break;
-  case (0xD1):
-    printf("CMP (oper),Y");
-    compareWithAccumulatorIndirectY(cpu);
-    break;
-  case (0xD5):
-    printf("CMP oper,X");
-    compareWithAccumulatorZeroPageX(cpu);
-    break;
-  case (0xD6):
-    printf("DEC oper,X");
-    decrementZeroPageX(cpu);
-    break;
-  case (0xD8):
-    printf("CLD");
-    clearDecimal(cpu);
-    break;
-  case (0xD9):
-    printf("CMP oper,Y");
-    compareWithAccumulatorAbsoluteY(cpu);
-    break;
-  case (0xDD):
-    printf("CMP oper,X");
-    compareWithAccumulatorAbsoluteX(cpu);
-    break;
-  case (0xDE):
-    printf("DEC oper,X");
-    decrementAbsoluteX(cpu);
-    break;
-  case (0xE0):
-    printf("CPX #oper");
-    compareWithXImmediate(cpu);
-    break;
-  case (0xE1):
-    printf("SBC (oper,X)");
-    subtractWithCarryIndirectX(cpu);
-    break;
-  case (0xE4):
-    printf("CPX oper");
-    compareWithXZeroPage(cpu);
-    break;
-  case (0xE5):
-    printf("SBC oper");
-    subtractWithCarryZeroPage(cpu);
-    break;
-  case (0xE6):
-    printf("INC oper");
-    incrementZeroPage(cpu);
-    break;
-  case (0xE8):
-    printf("INX");
-    incrementX(cpu);
-    break;
-  case (0xE9):
-    printf("SBC #oper");
-    subtractWithCarryImmediate(cpu);
-    break;
-  case (0xEA):
-    printf("NOP");
-    noOperation(cpu);
-    break;
-  case (0xEC):
-    printf("CPX oper");
-    compareWithXAbsolute(cpu);
-    break;
-  case (0xED):
-    printf("SBC oper");
-    subtractWithCarryAbsolute(cpu);
-    break;
-  case (0xEE):
-    printf("INC oper");
-    incrementAbsolute(cpu);
-    break;
-  case (0xF0):
-    printf("BEQ oper");
-    branchOnEqualRelative(cpu);
-    break;
-  case (0xF1):
-    printf("SBC (oper),Y");
-    subtractWithCarryIndirectY(cpu);
-    break;
-  case (0xF5):
-    printf("SBC oper,X");
-    subtractWithCarryZeroPageX(cpu);
-    break;
-  case (0xF6):
-    printf("INC oper,X");
-    incrementZeroPageX(cpu);
-    break;
-  case (0xF8):
-    printf("SED");
-    setDecimal(cpu);
-    break;
-  case (0xF9):
-    printf("SBC oper,Y");
-    subtractWithCarryAbsoluteY(cpu);
-    break;
-  case (0xFD):
-    printf("SBC oper,X");
-    subtractWithCarryAbsoluteX(cpu);
-    break;
-  case (0xFE):
-    printf("INC oper,X");
-    incrementAbsoluteX(cpu);
-    break;
-  default:
-    printf("UNKNOWN.");
-    break;
+// void initializeInstructionArray() {
+//   instructions[0] =
+//       (Instruction){.execute = *transferYToAccumulator, .name = "BRK"};
+// }
+
+void initializeInstructionArray() {
+  for (int i = 0; i < 256; i++) {
+    instructions[i] = (Instruction){.name = "???"};
   }
+
+  instructions[0x00] = (Instruction){.execute = forceBreak, .name = "BRK"};
+  instructions[0x01] =
+      (Instruction){.execute = orAIndirectX, .name = "ORA (oper,X)"};
+  instructions[0x05] =
+      (Instruction){.execute = orAZeroPage, .name = "ORA oper"};
+  instructions[0x06] =
+      (Instruction){.execute = arithmeticShiftLeftZeroPage, .name = "ASL oper"};
+  instructions[0x08] =
+      (Instruction){.execute = pushProcessorStatusOnStack, .name = "PHP"};
+  instructions[0x09] =
+      (Instruction){.execute = orAImmediate, .name = "ORA #oper"};
+  instructions[0x0A] =
+      (Instruction){.execute = arithmeticShiftLeftAccumulator, .name = "ASL"};
+  instructions[0x0D] =
+      (Instruction){.execute = orAAbsolute, .name = "ORA oper"};
+  instructions[0x0E] =
+      (Instruction){.execute = arithmeticShiftLeftAbsolute, .name = "ASL opr"};
+  instructions[0x10] =
+      (Instruction){.execute = branchOnPlusRelative, .name = "BPL oper"};
+  instructions[0x11] =
+      (Instruction){.execute = orAIndirectY, .name = "ORA (oper),Y"};
+  instructions[0x15] =
+      (Instruction){.execute = orAZeroPageX, .name = "ORA oper,X"};
+  instructions[0x16] = (Instruction){.execute = arithmeticShiftLeftZeroPageX,
+                                     .name = "ASL oper,X"};
+  instructions[0x18] = (Instruction){.execute = clearCarry, .name = "CLC"};
+  instructions[0x19] =
+      (Instruction){.execute = orAAbsoluteY, .name = "ORA oper,Y"};
+  instructions[0x1D] =
+      (Instruction){.execute = orAAbsoluteX, .name = "ORA oper,X"};
+  instructions[0x1E] = (Instruction){.execute = arithmeticShiftLeftAbsoluteX,
+                                     .name = "ASL oper,X"};
+  instructions[0x20] =
+      (Instruction){.execute = jumpSubRoutineAbsolute, .name = "JSR"};
+  instructions[0x21] =
+      (Instruction){.execute = andIndirectX, .name = "AND (oper,X)"};
+  instructions[0x24] =
+      (Instruction){.execute = bitTestZeroPage, .name = "BIT oper"};
+  instructions[0x25] =
+      (Instruction){.execute = andZeroPage, .name = "AND oper"};
+  instructions[0x26] =
+      (Instruction){.execute = rotateLeftZeroPage, .name = "ROL oper"};
+  instructions[0x28] =
+      (Instruction){.execute = pullProcessorStatusFromStack, .name = "PLP"};
+  instructions[0x29] =
+      (Instruction){.execute = andImmediate, .name = "AND #oper"};
+  instructions[0x2A] =
+      (Instruction){.execute = rotateLeftAccumulator, .name = "ROL A"};
+  instructions[0x2C] =
+      (Instruction){.execute = bitTestAbsolute, .name = "BIT oper"};
+  instructions[0x2D] =
+      (Instruction){.execute = andAbsolute, .name = "AND oper"};
+  instructions[0x2E] =
+      (Instruction){.execute = rotateLeftAbsolute, .name = "ROL oper"};
+  instructions[0x30] =
+      (Instruction){.execute = branchOnMinusRelative, .name = "BMI"};
+  instructions[0x31] =
+      (Instruction){.execute = andIndirectY, .name = "AND (oper),Y"};
+  instructions[0x35] =
+      (Instruction){.execute = andZeroPageX, .name = "AND oper,X"};
+  instructions[0x36] =
+      (Instruction){.execute = rotateLeftZeroPageX, .name = "ROL oper,X"};
+  instructions[0x38] = (Instruction){.execute = setCarry, .name = "SEC"};
+  instructions[0x39] =
+      (Instruction){.execute = andAbsoluteY, .name = "AND oper,Y"};
+  instructions[0x3D] =
+      (Instruction){.execute = andAbsoluteX, .name = "AND oper,X"};
+  instructions[0x3E] =
+      (Instruction){.execute = rotateLeftAbsoluteX, .name = "ROL oper,X"};
+  instructions[0x40] =
+      (Instruction){.execute = returnFromInterrupt, .name = "RTI"};
+  instructions[0x41] =
+      (Instruction){.execute = exclusiveOrIndirectX, .name = "EOR (oper,X)"};
+  instructions[0x45] =
+      (Instruction){.execute = exclusiveOrZeroPage, .name = "EOR oper"};
+  instructions[0x46] = (Instruction){.execute = logisticalShiftRightZeroPage,
+                                     .name = "LSR oper"};
+  instructions[0x48] =
+      (Instruction){.execute = pushAccumulatorOntoStack, .name = "PHA"};
+  instructions[0x49] =
+      (Instruction){.execute = exclusiveOrImmediate, .name = "EOR #oper"};
+  instructions[0x4A] = (Instruction){.execute = logisticalShiftRightAccumulator,
+                                     .name = "LSR A"};
+  instructions[0x4C] = (Instruction){.execute = jumpAbsolute, .name = "JMP"};
+  instructions[0x4D] =
+      (Instruction){.execute = exclusiveOrAbsolute, .name = "EOR oper"};
+  instructions[0x4E] = (Instruction){.execute = logisticalShiftRightAbsolute,
+                                     .name = "LSR oper"};
+  instructions[0x50] = (Instruction){.execute = branchOnOverflowClearRelative,
+                                     .name = "BVC oper"};
+  instructions[0x51] =
+      (Instruction){.execute = exclusiveOrIndirectY, .name = "EOR (oper),Y"};
+  instructions[0x55] =
+      (Instruction){.execute = exclusiveOrZeroPageX, .name = "EOR oper,X"};
+  instructions[0x56] = (Instruction){.execute = logisticalShiftRightZeroPageX,
+                                     .name = "LSR oper,X"};
+  instructions[0x58] =
+      (Instruction){.execute = clearInterruptDisable, .name = "CLI"};
+  instructions[0x59] =
+      (Instruction){.execute = exclusiveOrAbsoluteY, .name = "EOR oper,Y"};
+  instructions[0x5D] =
+      (Instruction){.execute = exclusiveOrAbsoluteX, .name = "EOR oper,X"};
+  instructions[0x5E] = (Instruction){.execute = logisticalShiftRightAbsoluteX,
+                                     .name = "LSR oper,X"};
+  instructions[0x60] =
+      (Instruction){.execute = returnFromSubroutine, .name = "RTS"};
+  instructions[0x61] =
+      (Instruction){.execute = addWithCarryIndirectX, .name = "ADC (oper,X)"};
+  instructions[0x65] =
+      (Instruction){.execute = addWithCarryZeroPage, .name = "ADC oper"};
+  instructions[0x66] =
+      (Instruction){.execute = rotateRightZeroPage, .name = "ROR oper"};
+  instructions[0x68] =
+      (Instruction){.execute = pullAccumulatorFromStack, .name = "PLA"};
+  instructions[0x69] =
+      (Instruction){.execute = addWithCarryImmediate, .name = "ADC #oper"};
+  instructions[0x6A] =
+      (Instruction){.execute = rotateRightAccumulator, .name = "ROR A"};
+  instructions[0x6C] =
+      (Instruction){.execute = jumpIndirect, .name = "JMP (oper)"};
+  instructions[0x6D] =
+      (Instruction){.execute = addWithCarryAbsolute, .name = "ADC oper"};
+  instructions[0x6E] =
+      (Instruction){.execute = rotateRightAbsolute, .name = "ROR oper"};
+  instructions[0x70] =
+      (Instruction){.execute = branchOnOverflowSetRelative, .name = "BVS"};
+  instructions[0x71] =
+      (Instruction){.execute = addWithCarryIndirectY, .name = "ADC (oper),Y"};
+  instructions[0x75] =
+      (Instruction){.execute = addWithCarryZeroPageX, .name = "ADC oper,X"};
+  instructions[0x76] =
+      (Instruction){.execute = rotateRightZeroPageX, .name = "ROR oper,X"};
+  instructions[0x78] =
+      (Instruction){.execute = setInterruptDisable, .name = "SEI"};
+  instructions[0x79] =
+      (Instruction){.execute = addWithCarryAbsoluteY, .name = "ADC oper,Y"};
+  instructions[0x7D] =
+      (Instruction){.execute = addWithCarryAbsoluteX, .name = "ADC oper,X"};
+  instructions[0x7E] =
+      (Instruction){.execute = rotateRightAbsoluteX, .name = "ROR oper,X"};
+  instructions[0x81] = (Instruction){.execute = storeAccumulatorIndirectX,
+                                     .name = "STA (oper,X)"};
+  instructions[0x84] =
+      (Instruction){.execute = storeYZeroPage, .name = "STY oper"};
+  instructions[0x85] =
+      (Instruction){.execute = storeAccumulatorZeroPage, .name = "STA oper"};
+  instructions[0x86] =
+      (Instruction){.execute = storeXZeroPage, .name = "STX oper"};
+  instructions[0x88] = (Instruction){.execute = decrementY, .name = "DEY"};
+  instructions[0x8A] =
+      (Instruction){.execute = transferXToAccumulator, .name = "TXA"};
+  instructions[0x8C] =
+      (Instruction){.execute = storeYAbsolute, .name = "STY oper"};
+  instructions[0x8D] =
+      (Instruction){.execute = storeAccumulatorAbsolute, .name = "STA oper"};
+  instructions[0x8E] =
+      (Instruction){.execute = storeXAbsolute, .name = "STX oper"};
+  instructions[0x90] =
+      (Instruction){.execute = branchOnClearCarryRelative, .name = "BCC oper"};
+  instructions[0x91] = (Instruction){.execute = storeAccumulatorIndirectY,
+                                     .name = "STA (oper),Y"};
+  instructions[0x94] =
+      (Instruction){.execute = storeYZeroPageX, .name = "STY oper,X"};
+  instructions[0x95] =
+      (Instruction){.execute = storeAccumulatorZeroPageX, .name = "STA oper,X"};
+  instructions[0x96] =
+      (Instruction){.execute = storeXZeroPageY, .name = "STX oper,Y"};
+  instructions[0x98] =
+      (Instruction){.execute = transferYToAccumulator, .name = "TYA"};
+  instructions[0x99] =
+      (Instruction){.execute = storeAccumulatorAbsoluteY, .name = "STA oper,Y"};
+  instructions[0x9A] =
+      (Instruction){.execute = transferXToStackPointer, .name = "TXS"};
+  instructions[0x9D] =
+      (Instruction){.execute = storeAccumulatorAbsoluteX, .name = "STA oper,X"};
+  instructions[0xA0] =
+      (Instruction){.execute = loadYImmediate, .name = "LDY #oper"};
+  instructions[0xA1] = (Instruction){.execute = loadAccumulatorIndirectX,
+                                     .name = "LDA (oper,X)"};
+  instructions[0xA2] =
+      (Instruction){.execute = loadXImmediate, .name = "LDX #oper"};
+  instructions[0xA4] =
+      (Instruction){.execute = loadYZeroPage, .name = "LDY oper"};
+  instructions[0xA5] =
+      (Instruction){.execute = loadAccumulatorZeroPage, .name = "LDA oper"};
+  instructions[0xA6] =
+      (Instruction){.execute = loadXZeroPage, .name = "LDX oper"};
+  instructions[0xA8] =
+      (Instruction){.execute = transferAccumulatorToY, .name = "TAY"};
+  instructions[0xA9] =
+      (Instruction){.execute = loadAccumulatorImmediate, .name = "LDA #oper"};
+  instructions[0xAA] =
+      (Instruction){.execute = transferAccumulatorToX, .name = "TAX"};
+  instructions[0xAC] =
+      (Instruction){.execute = loadYAbsolute, .name = "LDY oper"};
+  instructions[0xAD] =
+      (Instruction){.execute = loadAccumulatorAbsolute, .name = "LDA oper"};
+  instructions[0xAE] =
+      (Instruction){.execute = loadXAbsolute, .name = "LDX oper"};
+  instructions[0xB0] =
+      (Instruction){.execute = branchOnCarrySetRelative, .name = "BCS oper"};
+  instructions[0xB1] = (Instruction){.execute = loadAccumulatorIndirectY,
+                                     .name = "LDA (oper),Y"};
+  instructions[0xB4] =
+      (Instruction){.execute = loadYZeroPageX, .name = "LDY oper,X"};
+  instructions[0xB5] =
+      (Instruction){.execute = loadAccumulatorZeroPageX, .name = "LDA oper,X"};
+  instructions[0xB6] =
+      (Instruction){.execute = loadXZeroPageY, .name = "LDX oper,Y"};
+  instructions[0xB8] = (Instruction){.execute = clearOverflow, .name = "CLV"};
+  instructions[0xB9] =
+      (Instruction){.execute = loadAccumulatorAbsoluteY, .name = "LDA oper,Y"};
+  instructions[0xBA] =
+      (Instruction){.execute = transferStackPointerToX, .name = "TSX"};
+  instructions[0xBC] =
+      (Instruction){.execute = loadYAbsoluteX, .name = "LDY oper,X"};
+  instructions[0xBD] =
+      (Instruction){.execute = loadAccumulatorAbsoluteX, .name = "LDA oper,X"};
+  instructions[0xBE] =
+      (Instruction){.execute = loadXAbsoluteY, .name = "LDX oper,Y"};
+  instructions[0xC0] =
+      (Instruction){.execute = compareWithYImmediate, .name = "CPY #oper"};
+  instructions[0xC1] = (Instruction){.execute = compareWithAccumulatorIndirectX,
+                                     .name = "CMP (oper,X)"};
+  instructions[0xC4] =
+      (Instruction){.execute = compareWithYZeroPage, .name = "CPY oper"};
+  instructions[0xC5] = (Instruction){.execute = compareWithAccumulatorZeroPage,
+                                     .name = "CMP oper"};
+  instructions[0xC6] =
+      (Instruction){.execute = decrementZeroPage, .name = "DEC oper"};
+  instructions[0xC8] = (Instruction){.execute = incrementY, .name = "INY"};
+  instructions[0xC9] = (Instruction){.execute = compareWithAccumulatorImmediate,
+                                     .name = "CMP #oper"};
+  instructions[0xCA] = (Instruction){.execute = decrementX, .name = "DEX"};
+  instructions[0xCC] =
+      (Instruction){.execute = compareWithYAbsolute, .name = "CPY oper"};
+  instructions[0xCD] = (Instruction){.execute = compareWithAccumulatorAbsolute,
+                                     .name = "CMP oper"};
+  instructions[0xCE] =
+      (Instruction){.execute = decrementAbsolute, .name = "DEC oper"};
+  instructions[0xD0] =
+      (Instruction){.execute = branchOnNotEqualRelative, .name = "BNE oper"};
+  instructions[0xD1] = (Instruction){.execute = compareWithAccumulatorIndirectY,
+                                     .name = "CMP (oper),Y"};
+  instructions[0xD5] = (Instruction){.execute = compareWithAccumulatorZeroPageX,
+                                     .name = "CMP oper,X"};
+  instructions[0xD6] =
+      (Instruction){.execute = decrementZeroPageX, .name = "DEC oper,X"};
+  instructions[0xD8] = (Instruction){.execute = clearDecimal, .name = "CLD"};
+  instructions[0xD9] = (Instruction){.execute = compareWithAccumulatorAbsoluteY,
+                                     .name = "CMP oper,Y"};
+  instructions[0xDD] = (Instruction){.execute = compareWithAccumulatorAbsoluteX,
+                                     .name = "CMP oper,X"};
+  instructions[0xDE] =
+      (Instruction){.execute = decrementAbsoluteX, .name = "DEC oper,X"};
+  instructions[0xE0] =
+      (Instruction){.execute = compareWithXImmediate, .name = "CPX #oper"};
+  instructions[0xE1] = (Instruction){.execute = subtractWithCarryIndirectX,
+                                     .name = "SBC (oper,X)"};
+  instructions[0xE4] =
+      (Instruction){.execute = compareWithXZeroPage, .name = "CPX oper"};
+  instructions[0xE5] =
+      (Instruction){.execute = subtractWithCarryZeroPage, .name = "SBC oper"};
+  instructions[0xE6] =
+      (Instruction){.execute = incrementZeroPage, .name = "INC oper"};
+  instructions[0xE8] = (Instruction){.execute = incrementX, .name = "INX"};
+  instructions[0xE9] =
+      (Instruction){.execute = subtractWithCarryImmediate, .name = "SBC #oper"};
+  instructions[0xEA] = (Instruction){.execute = noOperation, .name = "NOP"};
+  instructions[0xEC] =
+      (Instruction){.execute = compareWithXAbsolute, .name = "CPX oper"};
+  instructions[0xED] =
+      (Instruction){.execute = subtractWithCarryAbsolute, .name = "SBC oper"};
+  instructions[0xEE] =
+      (Instruction){.execute = incrementAbsolute, .name = "INC oper"};
+  instructions[0xF0] =
+      (Instruction){.execute = branchOnEqualRelative, .name = "BEQ oper"};
+  instructions[0xF1] = (Instruction){.execute = subtractWithCarryIndirectY,
+                                     .name = "SBC (oper),Y"};
+  instructions[0xF5] = (Instruction){.execute = subtractWithCarryZeroPageX,
+                                     .name = "SBC oper,X"};
+  instructions[0xF6] =
+      (Instruction){.execute = incrementZeroPageX, .name = "INC oper,X"};
+  instructions[0xF8] = (Instruction){.execute = setDecimal, .name = "SED"};
+  instructions[0xF9] = (Instruction){.execute = subtractWithCarryAbsoluteY,
+                                     .name = "SBC oper,Y"};
+  instructions[0xFD] = (Instruction){.execute = subtractWithCarryAbsoluteX,
+                                     .name = "SBC oper,X"};
+  instructions[0xFE] =
+      (Instruction){.execute = incrementAbsoluteX, .name = "INC oper,X"};
 }
+
+char *getInstructionName(uint8_t code) {
+  printf("Trying to get instruction for code: %u\n", code);
+  char *name = instructions[code].name;
+  printf("Name: %s\n", name);
+  return name;
+}
+
+void executeInstruction(CPU *cpu) {
+  uint8_t instructionCode = readBus(cpu, cpu->PC);
+  Instruction instruction = instructions[instructionCode];
+  printf("%s", instruction.name);
+}
+
+// void executeInstruction(CPU *cpu) {
+//   uint8_t instruction = readBus(cpu, cpu->PC);
+//   printf("PC: 0x%04x ", cpu->PC);
+//   printf("NESMEM: 0x%04x ", cpu->PC - 0xBFF0);
+//   printf("Instruction: 0x%02x ", instruction);
+//   printf("N:%d ", (cpu->P & 0x80) >> 7);
+//   printf("V:%d ", (cpu->P & 0x40) >> 6);
+//   printf("U:%d ", (cpu->P & 0x20) >> 5);
+//   printf("B:%d ", (cpu->P & 0x10) >> 4);
+//   printf("D:%d ", (cpu->P & 0x08) >> 3);
+//   printf("I:%d ", (cpu->P & 0x04) >> 2);
+//   printf("Z:%d ", (cpu->P & 0x02) >> 1);
+//   printf("C:%d ", cpu->P & 0x01);
+//   cpu->PC++;
+//   switch (instruction) {
+//   case (0x00):
+//     printf("BRK");
+//     forceBreak(cpu);
+//     break;
+//   case (0x01):
+//     printf("ORA (oper,X)");
+//     orAIndirectX(cpu);
+//     break;
+//   case (0x05):
+//     printf("ORA oper");
+//     orAZeroPage(cpu);
+//     break;
+//   case (0x06):
+//     printf("ASL oper");
+//     arithmeticShiftLeftZeroPage(cpu);
+//     break;
+//   case (0x08):
+//     printf("PHP");
+//     pushProcessorStatusOnStack(cpu);
+//     break;
+//   case (0x09):
+//     printf("ORA #oper");
+//     orAImmediate(cpu);
+//     break;
+//   case (0x0A):
+//     printf("ASL");
+//     arithmeticShiftLeftAccumulator(cpu);
+//     break;
+//   case (0x0D):
+//     printf("ORA oper");
+//     orAAbsolute(cpu);
+//     break;
+//   case (0x0E):
+//     printf("ASL opr");
+//     arithmeticShiftLeftAbsolute(cpu);
+//     break;
+//   case (0x10):
+//     printf("BPL oper");
+//     branchOnPlusRelative(cpu);
+//     break;
+//   case (0x11):
+//     printf("ORA (oper),Y");
+//     orAIndirectY(cpu);
+//     break;
+//   case (0x15):
+//     printf("ORA oper,X");
+//     orAZeroPageX(cpu);
+//     break;
+//   case (0x16):
+//     printf("ASL oper,X");
+//     arithmeticShiftLeftZeroPageX(cpu);
+//     break;
+//   case (0x18):
+//     printf("CLC");
+//     clearCarry(cpu);
+//     break;
+//   case (0x19):
+//     printf("ORA oper,Y");
+//     orAAbsoluteY(cpu);
+//     break;
+//   case (0x1D):
+//     printf("ORA oper,X");
+//     orAAbsoluteX(cpu);
+//     break;
+//   case (0x1E):
+//     printf("ASL oper,X");
+//     arithmeticShiftLeftAbsoluteX(cpu);
+//     break;
+//   case (0x20):
+//     printf("JSR");
+//     jumpSubRoutineAbsolute(cpu);
+//     break;
+//   case (0x21):
+//     printf("AND (oper,X)");
+//     andIndirectX(cpu);
+//     break;
+//   case (0x24):
+//     printf("BIT oper");
+//     bitTestZeroPage(cpu);
+//     break;
+//   case (0x25):
+//     printf("AND oper");
+//     andZeroPage(cpu);
+//     break;
+//   case (0x26):
+//     printf("ROL oper");
+//     rotateLeftZeroPage(cpu);
+//     break;
+//   case (0x28):
+//     printf("PLP");
+//     pullProcessorStatusFromStack(cpu);
+//     break;
+//   case (0x29):
+//     printf("AND #oper");
+//     andImmediate(cpu);
+//     break;
+//   case (0x2A):
+//     printf("ROL A");
+//     rotateLeftAccumulator(cpu);
+//     break;
+//   case (0x2C):
+//     printf("BIT oper");
+//     bitTestAbsolute(cpu);
+//     break;
+//   case (0x2D):
+//     printf("AND oper");
+//     andAbsolute(cpu);
+//     break;
+//   case (0x2E):
+//     printf("ROL oper");
+//     rotateLeftAbsolute(cpu);
+//     break;
+//   case (0x30):
+//     printf("BMI");
+//     branchOnMinusRelative(cpu);
+//     break;
+//   case (0x31):
+//     printf("AND (oper),Y");
+//     andIndirectY(cpu);
+//     break;
+//   case (0x35):
+//     printf("AND oper,X");
+//     andZeroPageX(cpu);
+//     break;
+//   case (0x36):
+//     printf("ROL oper,X");
+//     rotateLeftZeroPageX(cpu);
+//     break;
+//   case (0x38):
+//     printf("SEC");
+//     setCarry(cpu);
+//     break;
+//   case (0x39):
+//     printf("AND oper,Y");
+//     andAbsoluteY(cpu);
+//     break;
+//   case (0x3D):
+//     printf("AND oper,X");
+//     andAbsoluteX(cpu);
+//     break;
+//   case (0x3E):
+//     printf("ROL oper,X");
+//     rotateLeftAbsoluteX(cpu);
+//     break;
+//   case (0x40):
+//     printf("RTI");
+//     returnFromInterrupt(cpu);
+//     break;
+//   case (0x41):
+//     printf("EOR (oper,X)");
+//     exclusiveOrIndirectX(cpu);
+//     break;
+//   case (0x45):
+//     printf("EOR oper");
+//     exclusiveOrZeroPage(cpu);
+//     break;
+//   case (0x46):
+//     printf("LSR oper");
+//     logisticalShiftRightZeroPage(cpu);
+//     break;
+//   case (0x48):
+//     printf("PHA");
+//     pushAccumulatorOntoStack(cpu);
+//     break;
+//   case (0x49):
+//     printf("EOR #oper");
+//     exclusiveOrImmediate(cpu);
+//     break;
+//   case (0x4A):
+//     printf("LSR A");
+//     logisticalShiftRightAccumulator(cpu);
+//     break;
+//   case (0x4C):
+//     printf("JMP");
+//     jumpAbsolute(cpu);
+//     break;
+//   case (0x4D):
+//     printf("EOR oper");
+//     exclusiveOrAbsolute(cpu);
+//     break;
+//   case (0x4E):
+//     printf("LSR oper");
+//     logisticalShiftRightAbsolute(cpu);
+//     break;
+//   case (0x50):
+//     printf("BVC oper");
+//     branchOnOverflowClearRelative(cpu);
+//     break;
+//   case (0x51):
+//     printf("EOR (oper),Y");
+//     exclusiveOrIndirectY(cpu);
+//     break;
+//   case (0x55):
+//     printf("EOR oper,X");
+//     exclusiveOrZeroPageX(cpu);
+//     break;
+//   case (0x56):
+//     printf("LSR oper,X");
+//     logisticalShiftRightZeroPageX(cpu);
+//     break;
+//   case (0x58):
+//     printf("CLI");
+//     clearInterruptDisable(cpu);
+//     break;
+//   case (0x59):
+//     printf("EOR oper,Y");
+//     exclusiveOrAbsoluteY(cpu);
+//     break;
+//   case (0x5D):
+//     printf("EOR oper,X");
+//     exclusiveOrAbsoluteX(cpu);
+//     break;
+//   case (0x5E):
+//     printf("LSR oper,X");
+//     logisticalShiftRightAbsoluteX(cpu);
+//     break;
+//   case (0x60):
+//     printf("RTS");
+//     returnFromSubroutine(cpu);
+//     break;
+//   case (0x61):
+//     printf("ADC (oper,X)");
+//     addWithCarryIndirectX(cpu);
+//     break;
+//   case (0x65):
+//     printf("ADC oper");
+//     addWithCarryZeroPage(cpu);
+//     break;
+//   case (0x66):
+//     printf("ROR oper");
+//     rotateRightZeroPage(cpu);
+//     break;
+//   case (0x68):
+//     printf("PLA");
+//     pullAccumulatorFromStack(cpu);
+//     break;
+//   case (0x69):
+//     printf("ADC #oper");
+//     addWithCarryImmediate(cpu);
+//     break;
+//   case (0x6A):
+//     printf("ROR A");
+//     rotateRightAccumulator(cpu);
+//     break;
+//   case (0x6C):
+//     printf("JMP (oper)");
+//     jumpIndirect(cpu);
+//     break;
+//   case (0x6D):
+//     printf("ADC oper");
+//     addWithCarryAbsolute(cpu);
+//     break;
+//   case (0x6E):
+//     printf("ROR oper");
+//     rotateRightAbsolute(cpu);
+//     break;
+//   case (0x70):
+//     printf("BVS");
+//     branchOnOverflowSetRelative(cpu);
+//     break;
+//   case (0x71):
+//     printf("ADC (oper),Y");
+//     addWithCarryIndirectY(cpu);
+//     break;
+//   case (0x75):
+//     printf("ADC oper,X");
+//     addWithCarryZeroPageX(cpu);
+//     break;
+//   case (0x76):
+//     printf("ROR oper,X");
+//     rotateRightZeroPageX(cpu);
+//     break;
+//   case (0x78):
+//     printf("SEI");
+//     setInterruptDisable(cpu);
+//     break;
+//   case (0x79):
+//     printf("ADC oper,Y");
+//     addWithCarryAbsoluteY(cpu);
+//     break;
+//   case (0x7D):
+//     printf("ADC oper,X");
+//     addWithCarryAbsoluteX(cpu);
+//     break;
+//   case (0x7E):
+//     printf("ROR oper,X");
+//     rotateRightAbsoluteX(cpu);
+//     break;
+//   case (0x81):
+//     printf("STA (oper,X)");
+//     storeAccumulatorIndirectX(cpu);
+//     break;
+//   case (0x84):
+//     printf("STY oper");
+//     storeYZeroPage(cpu);
+//     break;
+//   case (0x85):
+//     printf("STA oper");
+//     storeAccumulatorZeroPage(cpu);
+//     break;
+//   case (0x86):
+//     printf("STX oper");
+//     storeXZeroPage(cpu);
+//     break;
+//   case (0x88):
+//     printf("DEY");
+//     decrementY(cpu);
+//     break;
+//   case (0x8A):
+//     printf("TXA");
+//     transferXToAccumulator(cpu);
+//     break;
+//   case (0x8C):
+//     printf("STY oper");
+//     storeYAbsolute(cpu);
+//     break;
+//   case (0x8D):
+//     printf("STA oper");
+//     storeAccumulatorAbsolute(cpu);
+//     break;
+//   case (0x8E):
+//     printf("STX oper");
+//     storeXAbsolute(cpu);
+//     break;
+//   case (0x90):
+//     printf("BCC oper");
+//     branchOnClearCarryRelative(cpu);
+//     break;
+//   case (0x91):
+//     printf("STA (oper),Y");
+//     storeAccumulatorIndirectY(cpu);
+//     break;
+//   case (0x94):
+//     printf("STY oper,X");
+//     storeYZeroPageX(cpu);
+//     break;
+//   case (0x95):
+//     printf("STA oper,X");
+//     storeAccumulatorZeroPageX(cpu);
+//     break;
+//   case (0x96):
+//     printf("STX oper,Y");
+//     storeXZeroPageY(cpu);
+//     break;
+//   case (0x98):
+//     printf("TYA");
+//     transferYToAccumulator(cpu);
+//     break;
+//   case (0x99):
+//     printf("STA oper,Y");
+//     storeAccumulatorAbsoluteY(cpu);
+//     break;
+//   case (0x9A):
+//     printf("TXS");
+//     transferXToStackPointer(cpu);
+//     break;
+//   case (0x9D):
+//     printf("STA oper,X");
+//     storeAccumulatorAbsoluteX(cpu);
+//     break;
+//   case (0xA0):
+//     printf("LDY #oper");
+//     loadYImmediate(cpu);
+//     break;
+//   case (0xA1):
+//     printf("LDA (oper,X)");
+//     loadAccumulatorIndirectX(cpu);
+//     break;
+//   case (0xA2):
+//     printf("LDX #oper");
+//     loadXImmediate(cpu);
+//     break;
+//   case (0xA4):
+//     printf("LDY oper");
+//     loadYZeroPage(cpu);
+//     break;
+//   case (0xA5):
+//     printf("LDA oper");
+//     loadAccumulatorZeroPage(cpu);
+//     break;
+//   case (0xA6):
+//     printf("LDX oper");
+//     loadXZeroPage(cpu);
+//     break;
+//   case (0xA8):
+//     printf("TAY");
+//     transferAccumulatorToY(cpu);
+//     break;
+//   case (0xA9):
+//     printf("LDA #oper");
+//     loadAccumulatorImmediate(cpu);
+//     break;
+//   case (0xAA):
+//     printf("TAX");
+//     transferAccumulatorToX(cpu);
+//     break;
+//   case (0xAC):
+//     printf("LDY oper");
+//     loadYAbsolute(cpu);
+//     break;
+//   case (0xAD):
+//     printf("LDA oper");
+//     loadAccumulatorAbsolute(cpu);
+//     break;
+//   case (0xAE):
+//     printf("LDX oper");
+//     loadXAbsolute(cpu);
+//     break;
+//   case (0xB0):
+//     printf("BCS oper");
+//     branchOnCarrySetRelative(cpu);
+//     break;
+//   case (0xB1):
+//     printf("LDA (oper),Y");
+//     loadAccumulatorIndirectY(cpu);
+//     break;
+//   case (0xB4):
+//     printf("LDY oper,X");
+//     loadYZeroPageX(cpu);
+//     break;
+//   case (0xB5):
+//     printf("LDA oper,X");
+//     loadAccumulatorZeroPageX(cpu);
+//     break;
+//   case (0xB6):
+//     printf("LDX oper,Y");
+//     loadXZeroPageY(cpu);
+//     break;
+//   case (0xB8):
+//     printf("CLV");
+//     clearOverflow(cpu);
+//     break;
+//   case (0xB9):
+//     printf("LDA oper,Y");
+//     loadAccumulatorAbsoluteY(cpu);
+//     break;
+//   case (0xBA):
+//     printf("TSX");
+//     transferStackPointerToX(cpu);
+//     break;
+//   case (0xBC):
+//     printf("LDY oper,X");
+//     loadYAbsoluteX(cpu);
+//     break;
+//   case (0xBD):
+//     printf("LDA oper,X");
+//     loadAccumulatorAbsoluteX(cpu);
+//     break;
+//   case (0xBE):
+//     printf("LDX oper,Y");
+//     loadXAbsoluteY(cpu);
+//     break;
+//   case (0xC0):
+//     printf("CPY #oper");
+//     compareWithYImmediate(cpu);
+//     break;
+//   case (0xC1):
+//     printf("CMP (oper,X)");
+//     compareWithAccumulatorIndirectX(cpu);
+//     break;
+//   case (0xC4):
+//     printf("CPY oper");
+//     compareWithYZeroPage(cpu);
+//     break;
+//   case (0xC5):
+//     printf("CMP oper");
+//     compareWithAccumulatorZeroPage(cpu);
+//     break;
+//   case (0xC6):
+//     printf("DEC oper");
+//     decrementZeroPage(cpu);
+//     break;
+//   case (0xC8):
+//     printf("INY");
+//     incrementY(cpu);
+//     break;
+//   case (0xC9):
+//     printf("CMP #oper");
+//     compareWithAccumulatorImmediate(cpu);
+//     break;
+//   case (0xCA):
+//     printf("DEX");
+//     decrementX(cpu);
+//     break;
+//   case (0xCC):
+//     printf("CPY oper");
+//     compareWithYAbsolute(cpu);
+//     break;
+//   case (0xCD):
+//     printf("CMP oper");
+//     compareWithAccumulatorAbsolute(cpu);
+//     break;
+//   case (0xCE):
+//     printf("DEC oper");
+//     decrementAbsolute(cpu);
+//     break;
+//   case (0xD0):
+//     printf("BNE oper");
+//     branchOnNotEqualRelative(cpu);
+//     break;
+//   case (0xD1):
+//     printf("CMP (oper),Y");
+//     compareWithAccumulatorIndirectY(cpu);
+//     break;
+//   case (0xD5):
+//     printf("CMP oper,X");
+//     compareWithAccumulatorZeroPageX(cpu);
+//     break;
+//   case (0xD6):
+//     printf("DEC oper,X");
+//     decrementZeroPageX(cpu);
+//     break;
+//   case (0xD8):
+//     printf("CLD");
+//     clearDecimal(cpu);
+//     break;
+//   case (0xD9):
+//     printf("CMP oper,Y");
+//     compareWithAccumulatorAbsoluteY(cpu);
+//     break;
+//   case (0xDD):
+//     printf("CMP oper,X");
+//     compareWithAccumulatorAbsoluteX(cpu);
+//     break;
+//   case (0xDE):
+//     printf("DEC oper,X");
+//     decrementAbsoluteX(cpu);
+//     break;
+//   case (0xE0):
+//     printf("CPX #oper");
+//     compareWithXImmediate(cpu);
+//     break;
+//   case (0xE1):
+//     printf("SBC (oper,X)");
+//     subtractWithCarryIndirectX(cpu);
+//     break;
+//   case (0xE4):
+//     printf("CPX oper");
+//     compareWithXZeroPage(cpu);
+//     break;
+//   case (0xE5):
+//     printf("SBC oper");
+//     subtractWithCarryZeroPage(cpu);
+//     break;
+//   case (0xE6):
+//     printf("INC oper");
+//     incrementZeroPage(cpu);
+//     break;
+//   case (0xE8):
+//     printf("INX");
+//     incrementX(cpu);
+//     break;
+//   case (0xE9):
+//     printf("SBC #oper");
+//     subtractWithCarryImmediate(cpu);
+//     break;
+//   case (0xEA):
+//     printf("NOP");
+//     noOperation(cpu);
+//     break;
+//   case (0xEC):
+//     printf("CPX oper");
+//     compareWithXAbsolute(cpu);
+//     break;
+//   case (0xED):
+//     printf("SBC oper");
+//     subtractWithCarryAbsolute(cpu);
+//     break;
+//   case (0xEE):
+//     printf("INC oper");
+//     incrementAbsolute(cpu);
+//     break;
+//   case (0xF0):
+//     printf("BEQ oper");
+//     branchOnEqualRelative(cpu);
+//     break;
+//   case (0xF1):
+//     printf("SBC (oper),Y");
+//     subtractWithCarryIndirectY(cpu);
+//     break;
+//   case (0xF5):
+//     printf("SBC oper,X");
+//     subtractWithCarryZeroPageX(cpu);
+//     break;
+//   case (0xF6):
+//     printf("INC oper,X");
+//     incrementZeroPageX(cpu);
+//     break;
+//   case (0xF8):
+//     printf("SED");
+//     setDecimal(cpu);
+//     break;
+//   case (0xF9):
+//     printf("SBC oper,Y");
+//     subtractWithCarryAbsoluteY(cpu);
+//     break;
+//   case (0xFD):
+//     printf("SBC oper,X");
+//     subtractWithCarryAbsoluteX(cpu);
+//     break;
+//   case (0xFE):
+//     printf("INC oper,X");
+//     incrementAbsoluteX(cpu);
+//     break;
+//   default:
+//     printf("UNKNOWN.");
+//     break;
+//   }
+// }
 
 void execute(CPU *cpu) {
   // fetch init vector, and set PT to its value

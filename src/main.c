@@ -115,7 +115,8 @@ void *createWindow(void *arg) {
 
   char currInstMessage[256] = "Current instruction: ";
   char secBuf[256];
-  snprintf(secBuf, sizeof(secBuf), "%u", getCurrentInstruction(&cpu));
+  snprintf(secBuf, sizeof(secBuf), "%s",
+           getInstructionName(getCurrentInstruction(&cpu)));
   strncat(currInstMessage, secBuf,
           sizeof(currInstMessage) - strlen(currInstMessage) - 1);
 
@@ -157,10 +158,11 @@ void *createWindow(void *arg) {
   xPosition = 20;
   yPosition = rh - (rh / 10) + 10;
   width = rw / 6 - 10;
-	height = rh / 10 - 35;
+  height = rh / 10 - 35;
 
   SDL_Rect stackLabel = {xPosition, yPosition, width, height};
-  SDL_Rect currentInstructionLabel = {xPosition + width + 5, yPosition, width, height};
+  SDL_Rect currentInstructionLabel = {xPosition + width + 5, yPosition, width,
+                                      height};
 
   SDL_RenderFillRect(renderer, &footerBorder);
   SDL_SetRenderDrawColor(renderer, 150, 150, 150, 255);
@@ -211,7 +213,8 @@ void *initHardwareAndUi() {
   pthread_t thread1;
   struct ThreadArgs *args = malloc(sizeof(struct ThreadArgs));
   args->cpu = &cpu;
-
+  initializeInstructionArray();
+	
   pthread_create(&thread1, NULL, loadAndTestGame, &args);
   createWindow(NULL);
   return 0;

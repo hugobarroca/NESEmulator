@@ -37,4 +37,6 @@ void initProcessor(CPU *cpu);
 uint8_t getStackPointerValue(CPU *cpu);
 uint8_t getCurrentInstruction(CPU *cpu);
 void setAndPrintMapper(CPU *cpu, uint8_t mapperNumber);
+char *getInstructionName(uint8_t);
+void initializeInstructionArray();
 void execute(CPU *cpu);
