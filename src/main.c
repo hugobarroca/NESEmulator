@@ -1,3 +1,4 @@
+#include "SDL_keycode.h"
 #define SDL_MAIN_HANDLED
 #include "emulator.h"
 #include "utilities.h"
@@ -183,9 +184,18 @@ void *createWindow(void *arg) {
   SDL_RenderPresent(renderer);
 
   while (running) {
+    fflush(stdout);
     while (SDL_PollEvent(&event)) {
       if (event.type == SDL_QUIT) {
+        printf("QUIT event was issued!\n");
         running = 0;
+      } else if (event.type == SDL_KEYDOWN) {
+        printf("Key was pressed! Code: %u\n", event.key.keysym.sym);
+        if (event.key.keysym.sym == SDLK_KP_ENTER) {
+          printf("ENTER was pressed.");
+        } else if (event.key.keysym.sym == SDLK_RETURN) {
+          printf("ENTER was pressed.\n");
+        }
       }
     }
 
@@ -214,7 +224,7 @@ void *initHardwareAndUi() {
   struct ThreadArgs *args = malloc(sizeof(struct ThreadArgs));
   args->cpu = &cpu;
   initializeInstructionArray();
-	
+
   pthread_create(&thread1, NULL, loadAndTestGame, &args);
   createWindow(NULL);
   return 0;
