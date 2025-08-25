@@ -1,7 +1,14 @@
 #include <stdint.h>
 
+#define NUMBER_OF_INSTRUCTIONS 256
+
 typedef struct CPU CPU;
 typedef uint8_t (*ReadBus)(CPU *, uint16_t);
+
+typedef struct {
+  void (*execute)(CPU *cpu);
+  char name[20];
+} Instruction;
 
 struct CPU {
   // Accumulator
@@ -31,12 +38,13 @@ struct CPU {
   uint8_t *GameData;
   uint8_t MapperType;
   ReadBus ReadBus;
+	Instruction instructions[NUMBER_OF_INSTRUCTIONS];
 };
 
 void initProcessor(CPU *cpu);
 uint8_t getStackPointerValue(CPU *cpu);
 uint8_t getCurrentInstruction(CPU *cpu);
 void setAndPrintMapper(CPU *cpu, uint8_t mapperNumber);
-char *getInstructionName(uint8_t);
-void initializeInstructionArray();
+char *getInstructionName(CPU *cpu, uint8_t code);
+void initializeInstructionArray(CPU *cpu);
 void execute(CPU *cpu);

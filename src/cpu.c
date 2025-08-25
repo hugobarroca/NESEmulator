@@ -4,17 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define NUMBER_OF_INSTRUCTIONS 256
-
-// Global variables
-
-typedef struct {
-  void (*execute)(CPU *cpu);
-  char name[20];
-} Instruction;
-
-Instruction instructions[NUMBER_OF_INSTRUCTIONS] = {};
-
+// Methods
 void initProcessor(CPU *cpu) {
   cpu->A = 0;
   cpu->X = 0;
@@ -1388,318 +1378,313 @@ void transferYToAccumulator(CPU *cpu) {
   cpu->A = result;
 }
 
-// void initializeInstructionArray() {
-//   instructions[0] =
-//       (Instruction){.execute = *transferYToAccumulator, .name = "BRK"};
-// }
-
-void initializeInstructionArray() {
+void initializeInstructionArray(CPU *cpu) {
   for (int i = 0; i < 256; i++) {
-    instructions[i] = (Instruction){.name = "???"};
+    cpu->instructions[i] = (Instruction){.name = "???"};
   }
 
-  instructions[0x00] = (Instruction){.execute = forceBreak, .name = "BRK"};
-  instructions[0x01] =
+  cpu->instructions[0x00] = (Instruction){.execute = forceBreak, .name = "BRK"};
+  cpu->instructions[0x01] =
       (Instruction){.execute = orAIndirectX, .name = "ORA (oper,X)"};
-  instructions[0x05] =
+  cpu->instructions[0x05] =
       (Instruction){.execute = orAZeroPage, .name = "ORA oper"};
-  instructions[0x06] =
+  cpu->instructions[0x06] =
       (Instruction){.execute = arithmeticShiftLeftZeroPage, .name = "ASL oper"};
-  instructions[0x08] =
+  cpu->instructions[0x08] =
       (Instruction){.execute = pushProcessorStatusOnStack, .name = "PHP"};
-  instructions[0x09] =
+  cpu->instructions[0x09] =
       (Instruction){.execute = orAImmediate, .name = "ORA #oper"};
-  instructions[0x0A] =
+  cpu->instructions[0x0A] =
       (Instruction){.execute = arithmeticShiftLeftAccumulator, .name = "ASL"};
-  instructions[0x0D] =
+  cpu->instructions[0x0D] =
       (Instruction){.execute = orAAbsolute, .name = "ORA oper"};
-  instructions[0x0E] =
+  cpu->instructions[0x0E] =
       (Instruction){.execute = arithmeticShiftLeftAbsolute, .name = "ASL opr"};
-  instructions[0x10] =
+  cpu->instructions[0x10] =
       (Instruction){.execute = branchOnPlusRelative, .name = "BPL oper"};
-  instructions[0x11] =
+  cpu->instructions[0x11] =
       (Instruction){.execute = orAIndirectY, .name = "ORA (oper),Y"};
-  instructions[0x15] =
+  cpu->instructions[0x15] =
       (Instruction){.execute = orAZeroPageX, .name = "ORA oper,X"};
-  instructions[0x16] = (Instruction){.execute = arithmeticShiftLeftZeroPageX,
+  cpu->instructions[0x16] = (Instruction){.execute = arithmeticShiftLeftZeroPageX,
                                      .name = "ASL oper,X"};
-  instructions[0x18] = (Instruction){.execute = clearCarry, .name = "CLC"};
-  instructions[0x19] =
+  cpu->instructions[0x18] = (Instruction){.execute = clearCarry, .name = "CLC"};
+  cpu->instructions[0x19] =
       (Instruction){.execute = orAAbsoluteY, .name = "ORA oper,Y"};
-  instructions[0x1D] =
+  cpu->instructions[0x1D] =
       (Instruction){.execute = orAAbsoluteX, .name = "ORA oper,X"};
-  instructions[0x1E] = (Instruction){.execute = arithmeticShiftLeftAbsoluteX,
+  cpu->instructions[0x1E] = (Instruction){.execute = arithmeticShiftLeftAbsoluteX,
                                      .name = "ASL oper,X"};
-  instructions[0x20] =
+  cpu->instructions[0x20] =
       (Instruction){.execute = jumpSubRoutineAbsolute, .name = "JSR"};
-  instructions[0x21] =
+  cpu->instructions[0x21] =
       (Instruction){.execute = andIndirectX, .name = "AND (oper,X)"};
-  instructions[0x24] =
+  cpu->instructions[0x24] =
       (Instruction){.execute = bitTestZeroPage, .name = "BIT oper"};
-  instructions[0x25] =
+  cpu->instructions[0x25] =
       (Instruction){.execute = andZeroPage, .name = "AND oper"};
-  instructions[0x26] =
+  cpu->instructions[0x26] =
       (Instruction){.execute = rotateLeftZeroPage, .name = "ROL oper"};
-  instructions[0x28] =
+  cpu->instructions[0x28] =
       (Instruction){.execute = pullProcessorStatusFromStack, .name = "PLP"};
-  instructions[0x29] =
+  cpu->instructions[0x29] =
       (Instruction){.execute = andImmediate, .name = "AND #oper"};
-  instructions[0x2A] =
+  cpu->instructions[0x2A] =
       (Instruction){.execute = rotateLeftAccumulator, .name = "ROL A"};
-  instructions[0x2C] =
+  cpu->instructions[0x2C] =
       (Instruction){.execute = bitTestAbsolute, .name = "BIT oper"};
-  instructions[0x2D] =
+  cpu->instructions[0x2D] =
       (Instruction){.execute = andAbsolute, .name = "AND oper"};
-  instructions[0x2E] =
+  cpu->instructions[0x2E] =
       (Instruction){.execute = rotateLeftAbsolute, .name = "ROL oper"};
-  instructions[0x30] =
+  cpu->instructions[0x30] =
       (Instruction){.execute = branchOnMinusRelative, .name = "BMI"};
-  instructions[0x31] =
+  cpu->instructions[0x31] =
       (Instruction){.execute = andIndirectY, .name = "AND (oper),Y"};
-  instructions[0x35] =
+  cpu->instructions[0x35] =
       (Instruction){.execute = andZeroPageX, .name = "AND oper,X"};
-  instructions[0x36] =
+  cpu->instructions[0x36] =
       (Instruction){.execute = rotateLeftZeroPageX, .name = "ROL oper,X"};
-  instructions[0x38] = (Instruction){.execute = setCarry, .name = "SEC"};
-  instructions[0x39] =
+  cpu->instructions[0x38] = (Instruction){.execute = setCarry, .name = "SEC"};
+  cpu->instructions[0x39] =
       (Instruction){.execute = andAbsoluteY, .name = "AND oper,Y"};
-  instructions[0x3D] =
+  cpu->instructions[0x3D] =
       (Instruction){.execute = andAbsoluteX, .name = "AND oper,X"};
-  instructions[0x3E] =
+  cpu->instructions[0x3E] =
       (Instruction){.execute = rotateLeftAbsoluteX, .name = "ROL oper,X"};
-  instructions[0x40] =
+  cpu->instructions[0x40] =
       (Instruction){.execute = returnFromInterrupt, .name = "RTI"};
-  instructions[0x41] =
+  cpu->instructions[0x41] =
       (Instruction){.execute = exclusiveOrIndirectX, .name = "EOR (oper,X)"};
-  instructions[0x45] =
+  cpu->instructions[0x45] =
       (Instruction){.execute = exclusiveOrZeroPage, .name = "EOR oper"};
-  instructions[0x46] = (Instruction){.execute = logisticalShiftRightZeroPage,
+  cpu->instructions[0x46] = (Instruction){.execute = logisticalShiftRightZeroPage,
                                      .name = "LSR oper"};
-  instructions[0x48] =
+  cpu->instructions[0x48] =
       (Instruction){.execute = pushAccumulatorOntoStack, .name = "PHA"};
-  instructions[0x49] =
+  cpu->instructions[0x49] =
       (Instruction){.execute = exclusiveOrImmediate, .name = "EOR #oper"};
-  instructions[0x4A] = (Instruction){.execute = logisticalShiftRightAccumulator,
+  cpu->instructions[0x4A] = (Instruction){.execute = logisticalShiftRightAccumulator,
                                      .name = "LSR A"};
-  instructions[0x4C] = (Instruction){.execute = jumpAbsolute, .name = "JMP"};
-  instructions[0x4D] =
+  cpu->instructions[0x4C] = (Instruction){.execute = jumpAbsolute, .name = "JMP"};
+  cpu->instructions[0x4D] =
       (Instruction){.execute = exclusiveOrAbsolute, .name = "EOR oper"};
-  instructions[0x4E] = (Instruction){.execute = logisticalShiftRightAbsolute,
+  cpu->instructions[0x4E] = (Instruction){.execute = logisticalShiftRightAbsolute,
                                      .name = "LSR oper"};
-  instructions[0x50] = (Instruction){.execute = branchOnOverflowClearRelative,
+  cpu->instructions[0x50] = (Instruction){.execute = branchOnOverflowClearRelative,
                                      .name = "BVC oper"};
-  instructions[0x51] =
+  cpu->instructions[0x51] =
       (Instruction){.execute = exclusiveOrIndirectY, .name = "EOR (oper),Y"};
-  instructions[0x55] =
+  cpu->instructions[0x55] =
       (Instruction){.execute = exclusiveOrZeroPageX, .name = "EOR oper,X"};
-  instructions[0x56] = (Instruction){.execute = logisticalShiftRightZeroPageX,
+  cpu->instructions[0x56] = (Instruction){.execute = logisticalShiftRightZeroPageX,
                                      .name = "LSR oper,X"};
-  instructions[0x58] =
+  cpu->instructions[0x58] =
       (Instruction){.execute = clearInterruptDisable, .name = "CLI"};
-  instructions[0x59] =
+  cpu->instructions[0x59] =
       (Instruction){.execute = exclusiveOrAbsoluteY, .name = "EOR oper,Y"};
-  instructions[0x5D] =
+  cpu->instructions[0x5D] =
       (Instruction){.execute = exclusiveOrAbsoluteX, .name = "EOR oper,X"};
-  instructions[0x5E] = (Instruction){.execute = logisticalShiftRightAbsoluteX,
+  cpu->instructions[0x5E] = (Instruction){.execute = logisticalShiftRightAbsoluteX,
                                      .name = "LSR oper,X"};
-  instructions[0x60] =
+  cpu->instructions[0x60] =
       (Instruction){.execute = returnFromSubroutine, .name = "RTS"};
-  instructions[0x61] =
+  cpu->instructions[0x61] =
       (Instruction){.execute = addWithCarryIndirectX, .name = "ADC (oper,X)"};
-  instructions[0x65] =
+  cpu->instructions[0x65] =
       (Instruction){.execute = addWithCarryZeroPage, .name = "ADC oper"};
-  instructions[0x66] =
+  cpu->instructions[0x66] =
       (Instruction){.execute = rotateRightZeroPage, .name = "ROR oper"};
-  instructions[0x68] =
+  cpu->instructions[0x68] =
       (Instruction){.execute = pullAccumulatorFromStack, .name = "PLA"};
-  instructions[0x69] =
+  cpu->instructions[0x69] =
       (Instruction){.execute = addWithCarryImmediate, .name = "ADC #oper"};
-  instructions[0x6A] =
+  cpu->instructions[0x6A] =
       (Instruction){.execute = rotateRightAccumulator, .name = "ROR A"};
-  instructions[0x6C] =
+  cpu->instructions[0x6C] =
       (Instruction){.execute = jumpIndirect, .name = "JMP (oper)"};
-  instructions[0x6D] =
+  cpu->instructions[0x6D] =
       (Instruction){.execute = addWithCarryAbsolute, .name = "ADC oper"};
-  instructions[0x6E] =
+  cpu->instructions[0x6E] =
       (Instruction){.execute = rotateRightAbsolute, .name = "ROR oper"};
-  instructions[0x70] =
+  cpu->instructions[0x70] =
       (Instruction){.execute = branchOnOverflowSetRelative, .name = "BVS"};
-  instructions[0x71] =
+  cpu->instructions[0x71] =
       (Instruction){.execute = addWithCarryIndirectY, .name = "ADC (oper),Y"};
-  instructions[0x75] =
+  cpu->instructions[0x75] =
       (Instruction){.execute = addWithCarryZeroPageX, .name = "ADC oper,X"};
-  instructions[0x76] =
+  cpu->instructions[0x76] =
       (Instruction){.execute = rotateRightZeroPageX, .name = "ROR oper,X"};
-  instructions[0x78] =
+  cpu->instructions[0x78] =
       (Instruction){.execute = setInterruptDisable, .name = "SEI"};
-  instructions[0x79] =
+  cpu->instructions[0x79] =
       (Instruction){.execute = addWithCarryAbsoluteY, .name = "ADC oper,Y"};
-  instructions[0x7D] =
+  cpu->instructions[0x7D] =
       (Instruction){.execute = addWithCarryAbsoluteX, .name = "ADC oper,X"};
-  instructions[0x7E] =
+  cpu->instructions[0x7E] =
       (Instruction){.execute = rotateRightAbsoluteX, .name = "ROR oper,X"};
-  instructions[0x81] = (Instruction){.execute = storeAccumulatorIndirectX,
+  cpu->instructions[0x81] = (Instruction){.execute = storeAccumulatorIndirectX,
                                      .name = "STA (oper,X)"};
-  instructions[0x84] =
+  cpu->instructions[0x84] =
       (Instruction){.execute = storeYZeroPage, .name = "STY oper"};
-  instructions[0x85] =
+  cpu->instructions[0x85] =
       (Instruction){.execute = storeAccumulatorZeroPage, .name = "STA oper"};
-  instructions[0x86] =
+  cpu->instructions[0x86] =
       (Instruction){.execute = storeXZeroPage, .name = "STX oper"};
-  instructions[0x88] = (Instruction){.execute = decrementY, .name = "DEY"};
-  instructions[0x8A] =
+  cpu->instructions[0x88] = (Instruction){.execute = decrementY, .name = "DEY"};
+  cpu->instructions[0x8A] =
       (Instruction){.execute = transferXToAccumulator, .name = "TXA"};
-  instructions[0x8C] =
+  cpu->instructions[0x8C] =
       (Instruction){.execute = storeYAbsolute, .name = "STY oper"};
-  instructions[0x8D] =
+  cpu->instructions[0x8D] =
       (Instruction){.execute = storeAccumulatorAbsolute, .name = "STA oper"};
-  instructions[0x8E] =
+  cpu->instructions[0x8E] =
       (Instruction){.execute = storeXAbsolute, .name = "STX oper"};
-  instructions[0x90] =
+  cpu->instructions[0x90] =
       (Instruction){.execute = branchOnClearCarryRelative, .name = "BCC oper"};
-  instructions[0x91] = (Instruction){.execute = storeAccumulatorIndirectY,
+  cpu->instructions[0x91] = (Instruction){.execute = storeAccumulatorIndirectY,
                                      .name = "STA (oper),Y"};
-  instructions[0x94] =
+  cpu->instructions[0x94] =
       (Instruction){.execute = storeYZeroPageX, .name = "STY oper,X"};
-  instructions[0x95] =
+  cpu->instructions[0x95] =
       (Instruction){.execute = storeAccumulatorZeroPageX, .name = "STA oper,X"};
-  instructions[0x96] =
+  cpu->instructions[0x96] =
       (Instruction){.execute = storeXZeroPageY, .name = "STX oper,Y"};
-  instructions[0x98] =
+  cpu->instructions[0x98] =
       (Instruction){.execute = transferYToAccumulator, .name = "TYA"};
-  instructions[0x99] =
+  cpu->instructions[0x99] =
       (Instruction){.execute = storeAccumulatorAbsoluteY, .name = "STA oper,Y"};
-  instructions[0x9A] =
+  cpu->instructions[0x9A] =
       (Instruction){.execute = transferXToStackPointer, .name = "TXS"};
-  instructions[0x9D] =
+  cpu->instructions[0x9D] =
       (Instruction){.execute = storeAccumulatorAbsoluteX, .name = "STA oper,X"};
-  instructions[0xA0] =
+  cpu->instructions[0xA0] =
       (Instruction){.execute = loadYImmediate, .name = "LDY #oper"};
-  instructions[0xA1] = (Instruction){.execute = loadAccumulatorIndirectX,
+  cpu->instructions[0xA1] = (Instruction){.execute = loadAccumulatorIndirectX,
                                      .name = "LDA (oper,X)"};
-  instructions[0xA2] =
+  cpu->instructions[0xA2] =
       (Instruction){.execute = loadXImmediate, .name = "LDX #oper"};
-  instructions[0xA4] =
+  cpu->instructions[0xA4] =
       (Instruction){.execute = loadYZeroPage, .name = "LDY oper"};
-  instructions[0xA5] =
+  cpu->instructions[0xA5] =
       (Instruction){.execute = loadAccumulatorZeroPage, .name = "LDA oper"};
-  instructions[0xA6] =
+  cpu->instructions[0xA6] =
       (Instruction){.execute = loadXZeroPage, .name = "LDX oper"};
-  instructions[0xA8] =
+  cpu->instructions[0xA8] =
       (Instruction){.execute = transferAccumulatorToY, .name = "TAY"};
-  instructions[0xA9] =
+  cpu->instructions[0xA9] =
       (Instruction){.execute = loadAccumulatorImmediate, .name = "LDA #oper"};
-  instructions[0xAA] =
+  cpu->instructions[0xAA] =
       (Instruction){.execute = transferAccumulatorToX, .name = "TAX"};
-  instructions[0xAC] =
+  cpu->instructions[0xAC] =
       (Instruction){.execute = loadYAbsolute, .name = "LDY oper"};
-  instructions[0xAD] =
+  cpu->instructions[0xAD] =
       (Instruction){.execute = loadAccumulatorAbsolute, .name = "LDA oper"};
-  instructions[0xAE] =
+  cpu->instructions[0xAE] =
       (Instruction){.execute = loadXAbsolute, .name = "LDX oper"};
-  instructions[0xB0] =
+  cpu->instructions[0xB0] =
       (Instruction){.execute = branchOnCarrySetRelative, .name = "BCS oper"};
-  instructions[0xB1] = (Instruction){.execute = loadAccumulatorIndirectY,
+  cpu->instructions[0xB1] = (Instruction){.execute = loadAccumulatorIndirectY,
                                      .name = "LDA (oper),Y"};
-  instructions[0xB4] =
+  cpu->instructions[0xB4] =
       (Instruction){.execute = loadYZeroPageX, .name = "LDY oper,X"};
-  instructions[0xB5] =
+  cpu->instructions[0xB5] =
       (Instruction){.execute = loadAccumulatorZeroPageX, .name = "LDA oper,X"};
-  instructions[0xB6] =
+  cpu->instructions[0xB6] =
       (Instruction){.execute = loadXZeroPageY, .name = "LDX oper,Y"};
-  instructions[0xB8] = (Instruction){.execute = clearOverflow, .name = "CLV"};
-  instructions[0xB9] =
+  cpu->instructions[0xB8] = (Instruction){.execute = clearOverflow, .name = "CLV"};
+  cpu->instructions[0xB9] =
       (Instruction){.execute = loadAccumulatorAbsoluteY, .name = "LDA oper,Y"};
-  instructions[0xBA] =
+  cpu->instructions[0xBA] =
       (Instruction){.execute = transferStackPointerToX, .name = "TSX"};
-  instructions[0xBC] =
+  cpu->instructions[0xBC] =
       (Instruction){.execute = loadYAbsoluteX, .name = "LDY oper,X"};
-  instructions[0xBD] =
+  cpu->instructions[0xBD] =
       (Instruction){.execute = loadAccumulatorAbsoluteX, .name = "LDA oper,X"};
-  instructions[0xBE] =
+  cpu->instructions[0xBE] =
       (Instruction){.execute = loadXAbsoluteY, .name = "LDX oper,Y"};
-  instructions[0xC0] =
+  cpu->instructions[0xC0] =
       (Instruction){.execute = compareWithYImmediate, .name = "CPY #oper"};
-  instructions[0xC1] = (Instruction){.execute = compareWithAccumulatorIndirectX,
+  cpu->instructions[0xC1] = (Instruction){.execute = compareWithAccumulatorIndirectX,
                                      .name = "CMP (oper,X)"};
-  instructions[0xC4] =
+  cpu->instructions[0xC4] =
       (Instruction){.execute = compareWithYZeroPage, .name = "CPY oper"};
-  instructions[0xC5] = (Instruction){.execute = compareWithAccumulatorZeroPage,
+  cpu->instructions[0xC5] = (Instruction){.execute = compareWithAccumulatorZeroPage,
                                      .name = "CMP oper"};
-  instructions[0xC6] =
+  cpu->instructions[0xC6] =
       (Instruction){.execute = decrementZeroPage, .name = "DEC oper"};
-  instructions[0xC8] = (Instruction){.execute = incrementY, .name = "INY"};
-  instructions[0xC9] = (Instruction){.execute = compareWithAccumulatorImmediate,
+  cpu->instructions[0xC8] = (Instruction){.execute = incrementY, .name = "INY"};
+  cpu->instructions[0xC9] = (Instruction){.execute = compareWithAccumulatorImmediate,
                                      .name = "CMP #oper"};
-  instructions[0xCA] = (Instruction){.execute = decrementX, .name = "DEX"};
-  instructions[0xCC] =
+  cpu->instructions[0xCA] = (Instruction){.execute = decrementX, .name = "DEX"};
+  cpu->instructions[0xCC] =
       (Instruction){.execute = compareWithYAbsolute, .name = "CPY oper"};
-  instructions[0xCD] = (Instruction){.execute = compareWithAccumulatorAbsolute,
+  cpu->instructions[0xCD] = (Instruction){.execute = compareWithAccumulatorAbsolute,
                                      .name = "CMP oper"};
-  instructions[0xCE] =
+  cpu->instructions[0xCE] =
       (Instruction){.execute = decrementAbsolute, .name = "DEC oper"};
-  instructions[0xD0] =
+  cpu->instructions[0xD0] =
       (Instruction){.execute = branchOnNotEqualRelative, .name = "BNE oper"};
-  instructions[0xD1] = (Instruction){.execute = compareWithAccumulatorIndirectY,
+  cpu->instructions[0xD1] = (Instruction){.execute = compareWithAccumulatorIndirectY,
                                      .name = "CMP (oper),Y"};
-  instructions[0xD5] = (Instruction){.execute = compareWithAccumulatorZeroPageX,
+  cpu->instructions[0xD5] = (Instruction){.execute = compareWithAccumulatorZeroPageX,
                                      .name = "CMP oper,X"};
-  instructions[0xD6] =
+  cpu->instructions[0xD6] =
       (Instruction){.execute = decrementZeroPageX, .name = "DEC oper,X"};
-  instructions[0xD8] = (Instruction){.execute = clearDecimal, .name = "CLD"};
-  instructions[0xD9] = (Instruction){.execute = compareWithAccumulatorAbsoluteY,
+  cpu->instructions[0xD8] = (Instruction){.execute = clearDecimal, .name = "CLD"};
+  cpu->instructions[0xD9] = (Instruction){.execute = compareWithAccumulatorAbsoluteY,
                                      .name = "CMP oper,Y"};
-  instructions[0xDD] = (Instruction){.execute = compareWithAccumulatorAbsoluteX,
+  cpu->instructions[0xDD] = (Instruction){.execute = compareWithAccumulatorAbsoluteX,
                                      .name = "CMP oper,X"};
-  instructions[0xDE] =
+  cpu->instructions[0xDE] =
       (Instruction){.execute = decrementAbsoluteX, .name = "DEC oper,X"};
-  instructions[0xE0] =
+  cpu->instructions[0xE0] =
       (Instruction){.execute = compareWithXImmediate, .name = "CPX #oper"};
-  instructions[0xE1] = (Instruction){.execute = subtractWithCarryIndirectX,
+  cpu->instructions[0xE1] = (Instruction){.execute = subtractWithCarryIndirectX,
                                      .name = "SBC (oper,X)"};
-  instructions[0xE4] =
+  cpu->instructions[0xE4] =
       (Instruction){.execute = compareWithXZeroPage, .name = "CPX oper"};
-  instructions[0xE5] =
+  cpu->instructions[0xE5] =
       (Instruction){.execute = subtractWithCarryZeroPage, .name = "SBC oper"};
-  instructions[0xE6] =
+  cpu->instructions[0xE6] =
       (Instruction){.execute = incrementZeroPage, .name = "INC oper"};
-  instructions[0xE8] = (Instruction){.execute = incrementX, .name = "INX"};
-  instructions[0xE9] =
+  cpu->instructions[0xE8] = (Instruction){.execute = incrementX, .name = "INX"};
+  cpu->instructions[0xE9] =
       (Instruction){.execute = subtractWithCarryImmediate, .name = "SBC #oper"};
-  instructions[0xEA] = (Instruction){.execute = noOperation, .name = "NOP"};
-  instructions[0xEC] =
+  cpu->instructions[0xEA] = (Instruction){.execute = noOperation, .name = "NOP"};
+  cpu->instructions[0xEC] =
       (Instruction){.execute = compareWithXAbsolute, .name = "CPX oper"};
-  instructions[0xED] =
+  cpu->instructions[0xED] =
       (Instruction){.execute = subtractWithCarryAbsolute, .name = "SBC oper"};
-  instructions[0xEE] =
+  cpu->instructions[0xEE] =
       (Instruction){.execute = incrementAbsolute, .name = "INC oper"};
-  instructions[0xF0] =
+  cpu->instructions[0xF0] =
       (Instruction){.execute = branchOnEqualRelative, .name = "BEQ oper"};
-  instructions[0xF1] = (Instruction){.execute = subtractWithCarryIndirectY,
+  cpu->instructions[0xF1] = (Instruction){.execute = subtractWithCarryIndirectY,
                                      .name = "SBC (oper),Y"};
-  instructions[0xF5] = (Instruction){.execute = subtractWithCarryZeroPageX,
+  cpu->instructions[0xF5] = (Instruction){.execute = subtractWithCarryZeroPageX,
                                      .name = "SBC oper,X"};
-  instructions[0xF6] =
+  cpu->instructions[0xF6] =
       (Instruction){.execute = incrementZeroPageX, .name = "INC oper,X"};
-  instructions[0xF8] = (Instruction){.execute = setDecimal, .name = "SED"};
-  instructions[0xF9] = (Instruction){.execute = subtractWithCarryAbsoluteY,
+  cpu->instructions[0xF8] = (Instruction){.execute = setDecimal, .name = "SED"};
+  cpu->instructions[0xF9] = (Instruction){.execute = subtractWithCarryAbsoluteY,
                                      .name = "SBC oper,Y"};
-  instructions[0xFD] = (Instruction){.execute = subtractWithCarryAbsoluteX,
+  cpu->instructions[0xFD] = (Instruction){.execute = subtractWithCarryAbsoluteX,
                                      .name = "SBC oper,X"};
-  instructions[0xFE] =
+  cpu->instructions[0xFE] =
       (Instruction){.execute = incrementAbsoluteX, .name = "INC oper,X"};
 }
 
-char *getInstructionName(uint8_t code) {
+char *getInstructionName(CPU *cpu, uint8_t code) {
   printf("Trying to get instruction for code: %u\n", code);
-  char *name = instructions[code].name;
+  char *name = cpu->instructions[code].name;
   printf("Name: %s\n", name);
   return name;
 }
 
 void executeInstruction(CPU *cpu) {
   uint8_t instructionCode = readBus(cpu, cpu->PC);
-  Instruction instruction = instructions[instructionCode];
+  Instruction instruction = cpu->instructions[instructionCode];
   printf("%s", instruction.name);
 }
 
