@@ -30,7 +30,7 @@ uint8_t getStackPointerValue(CPU *cpu) { return cpu->Memory[cpu->S]; }
 
 uint8_t getCurrentInstruction(CPU *cpu) {
   uint8_t currentInstruction = cpu->Memory[cpu->PC];
-  printf("Returned current instruction \"%u\".", currentInstruction);
+  printf("Returned current instruction \"%u\"\n", currentInstruction);
   return currentInstruction;
 }
 

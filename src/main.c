@@ -3,6 +3,7 @@
 
 #include "SDL_keycode.h"
 #include "emulator.h"
+#include "libs/strings.h"
 #include "utilities.h"
 #include <SDL.h>
 #include <SDL_ttf.h>
@@ -11,10 +12,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include "libs/strings.h"
 
-SDL_Color White = {255, 255, 255};
-SDL_Color Black = {0, 0, 0};
+const int SCREEN_WIDTH = 800;
+const int SCREEN_HEIGHT = 600;
+const SDL_Color White = {255, 255, 255};
+const SDL_Color Black = {0, 0, 0};
 
 int commandInteger;
 char userSelection;
@@ -73,6 +75,29 @@ int checkSdlInitErrors() {
   return 0;
 }
 
+void runMainSDLLoop() {
+  SDL_Event event;
+  int running = 1;
+  while (running) {
+    fflush(stdout);
+    while (SDL_PollEvent(&event)) {
+      if (event.type == SDL_QUIT) {
+        printf("QUIT event was issued!\n");
+        running = 0;
+      } else if (event.type == SDL_KEYDOWN) {
+        printf("Key was pressed! Code: %u\n", event.key.keysym.sym);
+        if (event.key.keysym.sym == SDLK_KP_ENTER) {
+          printf("ENTER was pressed.");
+        } else if (event.key.keysym.sym == SDLK_RETURN) {
+          printf("ENTER was pressed.\n");
+        }
+      }
+    }
+
+    SDL_Delay(16);
+  }
+}
+
 void createUI() {
   int sdlStartedSuccessfully = checkSdlInitErrors();
   if (sdlStartedSuccessfully != 0) {
@@ -80,9 +105,10 @@ void createUI() {
     return;
   }
 
-  SDL_Window *window =
-      SDL_CreateWindow("Scald Emulator", SDL_WINDOWPOS_CENTERED,
-                       SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_SHOWN);
+  SDL_Window *window = SDL_CreateWindow(
+      "Scald Emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+      SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+
   if (!window) {
     printf("SDL_CreateWindow failed: %s`n", SDL_GetError());
     SDL_Quit();
@@ -98,9 +124,6 @@ void createUI() {
     return;
   }
 
-  int running = 1;
-
-  // This, unsurprisingly, requires the path to actually point to a ttf file...
   TTF_Font *font = TTF_OpenFont(FONT_PATH, 24);
 
   char programCounterLabelText[100];
@@ -113,19 +136,21 @@ void createUI() {
     printf("Check if Sans.ttf exists in build directory.");
   }
 
-  char stackPointerLabel[256] = "Stack pointer: ";
-  char buffer[256];
-  snprintf(buffer, sizeof(buffer), "%u", getStackPointerValue(&cpu));
-  fflush(stdout);
-  strncat(stackPointerLabel, buffer,
-          sizeof(stackPointerLabel) - strlen(stackPointerLabel) - 1);
+  // char stackPointerLabelText[256] = "Stack pointer: ";
+  // char buffer[256];
+  // snprintf(buffer, sizeof(buffer), "%u", getStackPointerValue(&cpu));
+  // fflush(stdout);
+  // strncat(stackPointerLabelText, buffer,
+  //         sizeof(stackPointerLabelText) - strlen(stackPointerLabelText) - 1);
 
-  char currInstLabel[256] = "Current instruction: ";
+  char currInstLabel[256] = "Current instruction: \n";
   char secBuf[256];
   snprintf(secBuf, sizeof(secBuf), "%s",
            getInstructionName(&cpu, getCurrentInstruction(&cpu)));
   strncat(currInstLabel, secBuf,
           sizeof(currInstLabel) - strlen(currInstLabel) - 1);
+  printf("Current ins label: %s", currInstLabel);
+  fflush(stdout);
   SDL_Surface *currIntSurfaceMessage =
       TTF_RenderUTF8_Solid(font, currInstLabel, White);
   if (currIntSurfaceMessage == NULL) {
@@ -181,36 +206,9 @@ void createUI() {
   int renderSuccess =
       SDL_RenderCopy(renderer, pcLabelTexture, NULL, &stackLabel);
 
-  // int renderSuccess2 =
-  //     SDL_RenderCopy(renderer, currInstTexture, NULL,
-  //     &currentInstructionLabel);
-  // if (renderSuccess != 0) {
-  //   printf("SDL_RenderCopy failed: %s`n", TTF_GetError());
-  //   SDL_Quit();
-  //   return NULL;
-  // }
-
   SDL_RenderPresent(renderer);
 
-  SDL_Event event;
-  while (running) {
-    fflush(stdout);
-    while (SDL_PollEvent(&event)) {
-      if (event.type == SDL_QUIT) {
-        printf("QUIT event was issued!\n");
-        running = 0;
-      } else if (event.type == SDL_KEYDOWN) {
-        printf("Key was pressed! Code: %u\n", event.key.keysym.sym);
-        if (event.key.keysym.sym == SDLK_KP_ENTER) {
-          printf("ENTER was pressed.");
-        } else if (event.key.keysym.sym == SDLK_RETURN) {
-          printf("ENTER was pressed.\n");
-        }
-      }
-    }
-
-    SDL_Delay(16);
-  }
+  runMainSDLLoop();
 
   SDL_DestroyWindow(window);
   SDL_Quit();
@@ -236,4 +234,9 @@ void createCPUThread() {
   pthread_create(&cpuThread, NULL, loadAndTestGame, &args);
 }
 
-int main(int argc, char *argv[]) { createUI(); }
+void runUIAndCPUThreads() {
+  createCPUThread();
+  createUI();
+}
+
+int main(int argc, char *argv[]) { runUIAndCPUThreads(); }
