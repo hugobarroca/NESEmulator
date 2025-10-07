@@ -21,6 +21,7 @@ add_executable(emulator.out
     cpu.c
     utilities.c
     emulator.c
+		libs/strings.c
 )
 
 # Link SDL2 and SDL2_ttf

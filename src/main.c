@@ -1,3 +1,4 @@
+#define FONT_PATH "Sans.ttf"
 #define SDL_MAIN_HANDLED
 
 #include "SDL_keycode.h"
@@ -10,8 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-
-#define FONT_PATH "Sans.ttf"
+#include "libs/strings.h"
 
 SDL_Color White = {255, 255, 255};
 SDL_Color Black = {0, 0, 0};
@@ -59,13 +59,6 @@ void welcomeScreen() {
   return;
 }
 
-void appendIntToString(char *prefix, int value, char *resultBuffer,
-                       int resultBufferSize) {
-  snprintf(resultBuffer, resultBufferSize, "%s%d", prefix, value);
-  printf("Program counter label: %s", resultBuffer);
-  fflush(stdout);
-}
-
 int checkSdlInitErrors() {
   if (SDL_Init(SDL_INIT_VIDEO) != 0) {
     printf("SDL_Init failed: %s/n", SDL_GetError());
@@ -109,14 +102,13 @@ void createUI() {
 
   // This, unsurprisingly, requires the path to actually point to a ttf file...
   TTF_Font *font = TTF_OpenFont(FONT_PATH, 24);
-  SDL_Color White = {255, 255, 255};
-  SDL_Color Black = {0, 0, 0};
 
-  char programCounterLabel[100];
-  appendIntToString("Program Counter: ", cpu.PC, programCounterLabel, sizeof(programCounterLabel));
-  SDL_Surface *pcLabelSurface =
-      TTF_RenderUTF8_Solid(font, programCounterLabel, White);
-  if (pcLabelSurface == NULL) {
+  char programCounterLabelText[100];
+  appendIntToString("Program Counter: ", cpu.PC, programCounterLabelText,
+                    sizeof(programCounterLabelText));
+  SDL_Surface *programCounterLabelSurface =
+      TTF_RenderUTF8_Solid(font, programCounterLabelText, White);
+  if (programCounterLabelSurface == NULL) {
     printf("TTF_RenderUTF8_Solid failed: %s\n", TTF_GetError());
     printf("Check if Sans.ttf exists in build directory.");
   }
@@ -141,7 +133,7 @@ void createUI() {
   }
 
   SDL_Texture *pcLabelTexture =
-      SDL_CreateTextureFromSurface(renderer, pcLabelSurface);
+      SDL_CreateTextureFromSurface(renderer, programCounterLabelSurface);
   if (pcLabelTexture == NULL) {
     printf("SDL_CreateTextureFromSurface failed: %s\n", SDL_GetError());
   }
@@ -244,7 +236,4 @@ void createCPUThread() {
   pthread_create(&cpuThread, NULL, loadAndTestGame, &args);
 }
 
-// Using one thread for the UI, one for the emulator (for now)
-void initHardwareAndUi() { createUI(); }
-
-int main(int argc, char *argv[]) { initHardwareAndUi(); }
+int main(int argc, char *argv[]) { createUI(); }
