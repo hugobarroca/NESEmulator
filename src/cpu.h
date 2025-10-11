@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include "cartridge.h"
 
 #define NUMBER_OF_INSTRUCTIONS 256
 
@@ -33,12 +34,13 @@ struct CPU {
   // 64KiB, full address space, with the following mapping:
   // 0x0000-0x07FF is the actual RAM addresses, and then they are mirrored 3
   // times, till 0x1FFF
+	// Actually, we should probably handle the addressing logic functionally, rather than rely on having this filled correctly...
   uint8_t Memory[65536];
   // Emulator specific fields
-  uint8_t *GameData;
+	Cartridge cartridge;
   uint8_t MapperType;
   ReadBus ReadBus;
-	Instruction instructions[NUMBER_OF_INSTRUCTIONS];
+  Instruction instructions[NUMBER_OF_INSTRUCTIONS];
 };
 
 void initProcessor(CPU *cpu);
@@ -47,4 +49,5 @@ uint8_t getCurrentInstruction(CPU *cpu);
 void setAndPrintMapper(CPU *cpu, uint8_t mapperNumber);
 char *getInstructionName(CPU *cpu, uint8_t code);
 void initializeInstructionArray(CPU *cpu);
+void executeInstruction(CPU *cpu);
 void execute(CPU *cpu);

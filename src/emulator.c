@@ -24,7 +24,8 @@ void detectGameFormat(CPU *cpu) {
   printf("Unknown game format detected.\n");
 }
 
-void readGameHeader(CPU *cpu) {
+// This function, along with printing information, sets the mapper type for current game
+void readGameHeaderAndSetMapperType(CPU *cpu) {
   uint8_t *nes = cpu->Memory;
   printf("HEADER START: %.3s\n", nes);
   printf("PRG ROM Size: %d KBs.\n", cpu->Memory[4] * 16);
@@ -93,7 +94,8 @@ void readGameHeader(CPU *cpu) {
   printf("RIPPER NAME: %.5s\n", ripper);
 }
 
-void* loadGame(CPU *cpu, char fileName[]) {
+void* lloadGame(CPU *cpu, char fileName[]) {
+  initProcessor(cpu);
   printf("Attempting to load game: %s\n", fileName);
   FILE *file = fopen(fileName, "rb");
   if (file == NULL) {
@@ -114,9 +116,8 @@ void* loadGame(CPU *cpu, char fileName[]) {
   fread(cpu->GameData, sizeof(uint8_t), (fileSize), file);
   printf("Read file successfully!\n");
 
-  initProcessor(cpu);
-  readGameHeader(cpu);
   detectGameFormat(cpu);
-  execute(cpu);
+  readGameHeaderAndSetMapperType(cpu);
+  //execute(cpu);
   fclose(file);
 }
