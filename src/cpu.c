@@ -11,6 +11,9 @@ void initProcessor(CPU *cpu) {
   cpu->Y = 0;
   cpu->P = 0;
   cpu->S = 0xFF;
+  // Program Counter should read the values at the 0xFFFC-0XFFFF, which
+  // correspond to the interrupt vector, and use the contents as the actual
+  // start value.
   cpu->PC = 0xFFFC;
   // The stack lives in addresses 0x0100 to 0x01FF
   for (int i = 0x0100; i < 0x01FF; i++) {
@@ -28,8 +31,38 @@ void pushStack(CPU *cpu, uint8_t value) {
 
 uint8_t getStackPointerValue(CPU *cpu) { return cpu->Memory[cpu->S]; }
 
+uint8_t getCurrentInstructionMapper0(CPU *cpu) {
+  uint16_t currentInstruction = cpu->PC;
+  uint16_t actualInstruction;
+	printf("Getting current instruction for mapper 0.\n");
+  if (currentInstruction <= 0x7FFF) {
+    // Access game data directly
+    printf("Tried accessing memory location: %u\n", currentInstruction);
+    return cpu->GameData[currentInstruction];
+  } else if (currentInstruction <= 0xBFFF) {
+    actualInstruction = currentInstruction - 0x2000;
+    printf("Tried accessing memory location: %u\n", actualInstruction);
+    return cpu->GameData[actualInstruction];
+  } else {
+    printf("Tried accessing memory location: %u\n", actualInstruction);
+    actualInstruction = currentInstruction - 0x4000;
+    return cpu->GameData[actualInstruction];
+  }
+  return 0;
+}
+
+//
+// TODO: This instruction should mimic the way the CPU addresses memory, which
+// is mapper-dependent.
 uint8_t getCurrentInstruction(CPU *cpu) {
   uint8_t currentInstruction = cpu->Memory[cpu->PC];
+  switch (cpu->MapperType) {
+  case 0:
+    getCurrentInstructionMapper0(cpu);
+  default:
+    return 0;
+  }
+
   printf("Returned current instruction \"%u\"\n", currentInstruction);
   return currentInstruction;
 }
@@ -1406,15 +1439,15 @@ void initializeInstructionArray(CPU *cpu) {
       (Instruction){.execute = orAIndirectY, .name = "ORA (oper),Y"};
   cpu->instructions[0x15] =
       (Instruction){.execute = orAZeroPageX, .name = "ORA oper,X"};
-  cpu->instructions[0x16] = (Instruction){.execute = arithmeticShiftLeftZeroPageX,
-                                     .name = "ASL oper,X"};
+  cpu->instructions[0x16] = (Instruction){
+      .execute = arithmeticShiftLeftZeroPageX, .name = "ASL oper,X"};
   cpu->instructions[0x18] = (Instruction){.execute = clearCarry, .name = "CLC"};
   cpu->instructions[0x19] =
       (Instruction){.execute = orAAbsoluteY, .name = "ORA oper,Y"};
   cpu->instructions[0x1D] =
       (Instruction){.execute = orAAbsoluteX, .name = "ORA oper,X"};
-  cpu->instructions[0x1E] = (Instruction){.execute = arithmeticShiftLeftAbsoluteX,
-                                     .name = "ASL oper,X"};
+  cpu->instructions[0x1E] = (Instruction){
+      .execute = arithmeticShiftLeftAbsoluteX, .name = "ASL oper,X"};
   cpu->instructions[0x20] =
       (Instruction){.execute = jumpSubRoutineAbsolute, .name = "JSR"};
   cpu->instructions[0x21] =
@@ -1458,35 +1491,36 @@ void initializeInstructionArray(CPU *cpu) {
       (Instruction){.execute = exclusiveOrIndirectX, .name = "EOR (oper,X)"};
   cpu->instructions[0x45] =
       (Instruction){.execute = exclusiveOrZeroPage, .name = "EOR oper"};
-  cpu->instructions[0x46] = (Instruction){.execute = logisticalShiftRightZeroPage,
-                                     .name = "LSR oper"};
+  cpu->instructions[0x46] = (Instruction){
+      .execute = logisticalShiftRightZeroPage, .name = "LSR oper"};
   cpu->instructions[0x48] =
       (Instruction){.execute = pushAccumulatorOntoStack, .name = "PHA"};
   cpu->instructions[0x49] =
       (Instruction){.execute = exclusiveOrImmediate, .name = "EOR #oper"};
-  cpu->instructions[0x4A] = (Instruction){.execute = logisticalShiftRightAccumulator,
-                                     .name = "LSR A"};
-  cpu->instructions[0x4C] = (Instruction){.execute = jumpAbsolute, .name = "JMP"};
+  cpu->instructions[0x4A] = (Instruction){
+      .execute = logisticalShiftRightAccumulator, .name = "LSR A"};
+  cpu->instructions[0x4C] =
+      (Instruction){.execute = jumpAbsolute, .name = "JMP"};
   cpu->instructions[0x4D] =
       (Instruction){.execute = exclusiveOrAbsolute, .name = "EOR oper"};
-  cpu->instructions[0x4E] = (Instruction){.execute = logisticalShiftRightAbsolute,
-                                     .name = "LSR oper"};
-  cpu->instructions[0x50] = (Instruction){.execute = branchOnOverflowClearRelative,
-                                     .name = "BVC oper"};
+  cpu->instructions[0x4E] = (Instruction){
+      .execute = logisticalShiftRightAbsolute, .name = "LSR oper"};
+  cpu->instructions[0x50] = (Instruction){
+      .execute = branchOnOverflowClearRelative, .name = "BVC oper"};
   cpu->instructions[0x51] =
       (Instruction){.execute = exclusiveOrIndirectY, .name = "EOR (oper),Y"};
   cpu->instructions[0x55] =
       (Instruction){.execute = exclusiveOrZeroPageX, .name = "EOR oper,X"};
-  cpu->instructions[0x56] = (Instruction){.execute = logisticalShiftRightZeroPageX,
-                                     .name = "LSR oper,X"};
+  cpu->instructions[0x56] = (Instruction){
+      .execute = logisticalShiftRightZeroPageX, .name = "LSR oper,X"};
   cpu->instructions[0x58] =
       (Instruction){.execute = clearInterruptDisable, .name = "CLI"};
   cpu->instructions[0x59] =
       (Instruction){.execute = exclusiveOrAbsoluteY, .name = "EOR oper,Y"};
   cpu->instructions[0x5D] =
       (Instruction){.execute = exclusiveOrAbsoluteX, .name = "EOR oper,X"};
-  cpu->instructions[0x5E] = (Instruction){.execute = logisticalShiftRightAbsoluteX,
-                                     .name = "LSR oper,X"};
+  cpu->instructions[0x5E] = (Instruction){
+      .execute = logisticalShiftRightAbsoluteX, .name = "LSR oper,X"};
   cpu->instructions[0x60] =
       (Instruction){.execute = returnFromSubroutine, .name = "RTS"};
   cpu->instructions[0x61] =
@@ -1524,7 +1558,7 @@ void initializeInstructionArray(CPU *cpu) {
   cpu->instructions[0x7E] =
       (Instruction){.execute = rotateRightAbsoluteX, .name = "ROR oper,X"};
   cpu->instructions[0x81] = (Instruction){.execute = storeAccumulatorIndirectX,
-                                     .name = "STA (oper,X)"};
+                                          .name = "STA (oper,X)"};
   cpu->instructions[0x84] =
       (Instruction){.execute = storeYZeroPage, .name = "STY oper"};
   cpu->instructions[0x85] =
@@ -1543,7 +1577,7 @@ void initializeInstructionArray(CPU *cpu) {
   cpu->instructions[0x90] =
       (Instruction){.execute = branchOnClearCarryRelative, .name = "BCC oper"};
   cpu->instructions[0x91] = (Instruction){.execute = storeAccumulatorIndirectY,
-                                     .name = "STA (oper),Y"};
+                                          .name = "STA (oper),Y"};
   cpu->instructions[0x94] =
       (Instruction){.execute = storeYZeroPageX, .name = "STY oper,X"};
   cpu->instructions[0x95] =
@@ -1561,7 +1595,7 @@ void initializeInstructionArray(CPU *cpu) {
   cpu->instructions[0xA0] =
       (Instruction){.execute = loadYImmediate, .name = "LDY #oper"};
   cpu->instructions[0xA1] = (Instruction){.execute = loadAccumulatorIndirectX,
-                                     .name = "LDA (oper,X)"};
+                                          .name = "LDA (oper,X)"};
   cpu->instructions[0xA2] =
       (Instruction){.execute = loadXImmediate, .name = "LDX #oper"};
   cpu->instructions[0xA4] =
@@ -1585,14 +1619,15 @@ void initializeInstructionArray(CPU *cpu) {
   cpu->instructions[0xB0] =
       (Instruction){.execute = branchOnCarrySetRelative, .name = "BCS oper"};
   cpu->instructions[0xB1] = (Instruction){.execute = loadAccumulatorIndirectY,
-                                     .name = "LDA (oper),Y"};
+                                          .name = "LDA (oper),Y"};
   cpu->instructions[0xB4] =
       (Instruction){.execute = loadYZeroPageX, .name = "LDY oper,X"};
   cpu->instructions[0xB5] =
       (Instruction){.execute = loadAccumulatorZeroPageX, .name = "LDA oper,X"};
   cpu->instructions[0xB6] =
       (Instruction){.execute = loadXZeroPageY, .name = "LDX oper,Y"};
-  cpu->instructions[0xB8] = (Instruction){.execute = clearOverflow, .name = "CLV"};
+  cpu->instructions[0xB8] =
+      (Instruction){.execute = clearOverflow, .name = "CLV"};
   cpu->instructions[0xB9] =
       (Instruction){.execute = loadAccumulatorAbsoluteY, .name = "LDA oper,Y"};
   cpu->instructions[0xBA] =
@@ -1605,43 +1640,44 @@ void initializeInstructionArray(CPU *cpu) {
       (Instruction){.execute = loadXAbsoluteY, .name = "LDX oper,Y"};
   cpu->instructions[0xC0] =
       (Instruction){.execute = compareWithYImmediate, .name = "CPY #oper"};
-  cpu->instructions[0xC1] = (Instruction){.execute = compareWithAccumulatorIndirectX,
-                                     .name = "CMP (oper,X)"};
+  cpu->instructions[0xC1] = (Instruction){
+      .execute = compareWithAccumulatorIndirectX, .name = "CMP (oper,X)"};
   cpu->instructions[0xC4] =
       (Instruction){.execute = compareWithYZeroPage, .name = "CPY oper"};
-  cpu->instructions[0xC5] = (Instruction){.execute = compareWithAccumulatorZeroPage,
-                                     .name = "CMP oper"};
+  cpu->instructions[0xC5] = (Instruction){
+      .execute = compareWithAccumulatorZeroPage, .name = "CMP oper"};
   cpu->instructions[0xC6] =
       (Instruction){.execute = decrementZeroPage, .name = "DEC oper"};
   cpu->instructions[0xC8] = (Instruction){.execute = incrementY, .name = "INY"};
-  cpu->instructions[0xC9] = (Instruction){.execute = compareWithAccumulatorImmediate,
-                                     .name = "CMP #oper"};
+  cpu->instructions[0xC9] = (Instruction){
+      .execute = compareWithAccumulatorImmediate, .name = "CMP #oper"};
   cpu->instructions[0xCA] = (Instruction){.execute = decrementX, .name = "DEX"};
   cpu->instructions[0xCC] =
       (Instruction){.execute = compareWithYAbsolute, .name = "CPY oper"};
-  cpu->instructions[0xCD] = (Instruction){.execute = compareWithAccumulatorAbsolute,
-                                     .name = "CMP oper"};
+  cpu->instructions[0xCD] = (Instruction){
+      .execute = compareWithAccumulatorAbsolute, .name = "CMP oper"};
   cpu->instructions[0xCE] =
       (Instruction){.execute = decrementAbsolute, .name = "DEC oper"};
   cpu->instructions[0xD0] =
       (Instruction){.execute = branchOnNotEqualRelative, .name = "BNE oper"};
-  cpu->instructions[0xD1] = (Instruction){.execute = compareWithAccumulatorIndirectY,
-                                     .name = "CMP (oper),Y"};
-  cpu->instructions[0xD5] = (Instruction){.execute = compareWithAccumulatorZeroPageX,
-                                     .name = "CMP oper,X"};
+  cpu->instructions[0xD1] = (Instruction){
+      .execute = compareWithAccumulatorIndirectY, .name = "CMP (oper),Y"};
+  cpu->instructions[0xD5] = (Instruction){
+      .execute = compareWithAccumulatorZeroPageX, .name = "CMP oper,X"};
   cpu->instructions[0xD6] =
       (Instruction){.execute = decrementZeroPageX, .name = "DEC oper,X"};
-  cpu->instructions[0xD8] = (Instruction){.execute = clearDecimal, .name = "CLD"};
-  cpu->instructions[0xD9] = (Instruction){.execute = compareWithAccumulatorAbsoluteY,
-                                     .name = "CMP oper,Y"};
-  cpu->instructions[0xDD] = (Instruction){.execute = compareWithAccumulatorAbsoluteX,
-                                     .name = "CMP oper,X"};
+  cpu->instructions[0xD8] =
+      (Instruction){.execute = clearDecimal, .name = "CLD"};
+  cpu->instructions[0xD9] = (Instruction){
+      .execute = compareWithAccumulatorAbsoluteY, .name = "CMP oper,Y"};
+  cpu->instructions[0xDD] = (Instruction){
+      .execute = compareWithAccumulatorAbsoluteX, .name = "CMP oper,X"};
   cpu->instructions[0xDE] =
       (Instruction){.execute = decrementAbsoluteX, .name = "DEC oper,X"};
   cpu->instructions[0xE0] =
       (Instruction){.execute = compareWithXImmediate, .name = "CPX #oper"};
   cpu->instructions[0xE1] = (Instruction){.execute = subtractWithCarryIndirectX,
-                                     .name = "SBC (oper,X)"};
+                                          .name = "SBC (oper,X)"};
   cpu->instructions[0xE4] =
       (Instruction){.execute = compareWithXZeroPage, .name = "CPX oper"};
   cpu->instructions[0xE5] =
@@ -1651,7 +1687,8 @@ void initializeInstructionArray(CPU *cpu) {
   cpu->instructions[0xE8] = (Instruction){.execute = incrementX, .name = "INX"};
   cpu->instructions[0xE9] =
       (Instruction){.execute = subtractWithCarryImmediate, .name = "SBC #oper"};
-  cpu->instructions[0xEA] = (Instruction){.execute = noOperation, .name = "NOP"};
+  cpu->instructions[0xEA] =
+      (Instruction){.execute = noOperation, .name = "NOP"};
   cpu->instructions[0xEC] =
       (Instruction){.execute = compareWithXAbsolute, .name = "CPX oper"};
   cpu->instructions[0xED] =
@@ -1661,16 +1698,16 @@ void initializeInstructionArray(CPU *cpu) {
   cpu->instructions[0xF0] =
       (Instruction){.execute = branchOnEqualRelative, .name = "BEQ oper"};
   cpu->instructions[0xF1] = (Instruction){.execute = subtractWithCarryIndirectY,
-                                     .name = "SBC (oper),Y"};
+                                          .name = "SBC (oper),Y"};
   cpu->instructions[0xF5] = (Instruction){.execute = subtractWithCarryZeroPageX,
-                                     .name = "SBC oper,X"};
+                                          .name = "SBC oper,X"};
   cpu->instructions[0xF6] =
       (Instruction){.execute = incrementZeroPageX, .name = "INC oper,X"};
   cpu->instructions[0xF8] = (Instruction){.execute = setDecimal, .name = "SED"};
   cpu->instructions[0xF9] = (Instruction){.execute = subtractWithCarryAbsoluteY,
-                                     .name = "SBC oper,Y"};
+                                          .name = "SBC oper,Y"};
   cpu->instructions[0xFD] = (Instruction){.execute = subtractWithCarryAbsoluteX,
-                                     .name = "SBC oper,X"};
+                                          .name = "SBC oper,X"};
   cpu->instructions[0xFE] =
       (Instruction){.execute = incrementAbsoluteX, .name = "INC oper,X"};
 }
@@ -1686,6 +1723,7 @@ void executeInstruction(CPU *cpu) {
   uint8_t instructionCode = readBus(cpu, cpu->PC);
   Instruction instruction = cpu->instructions[instructionCode];
   printf("%s", instruction.name);
+  cpu->PC = cpu->PC++;
 }
 
 // void executeInstruction(CPU *cpu) {
