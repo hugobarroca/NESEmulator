@@ -12,11 +12,8 @@ typedef struct {
 } Instruction;
 
 struct CPU {
-  // Accumulator
   uint8_t A;
-  // Register X
   uint8_t X;
-  // Register Y
   uint8_t Y;
   // Processor Status
   // 7 Negative Flag (N)
@@ -51,3 +48,4 @@ char *getInstructionName(CPU *cpu, uint8_t code);
 void initializeInstructionArray(CPU *cpu);
 void executeInstruction(CPU *cpu);
 void execute(CPU *cpu);
+

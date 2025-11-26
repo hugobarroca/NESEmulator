@@ -1,15 +1,13 @@
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
-enum Mapper {
-  NROM_128 = 0
-};
+enum Mapper { NROM_128 = 0 };
 
 typedef struct {
   uint8_t *GameData;
   uint8_t *PRG_ROM;
-	enum Mapper MapperType;
-	bool IsTrainerPresent;
+  enum Mapper MapperType;
+  bool IsTrainerPresent;
 
 } Cartridge;
 

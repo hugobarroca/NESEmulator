@@ -38,15 +38,15 @@ uint8_t getCurrentInstructionMapper0(CPU *cpu) {
   if (currentInstruction <= 0x7FFF) {
     // Access game data directly
     printf("Tried accessing memory location: %u\n", currentInstruction);
-    return cpu->GameData[currentInstruction];
+    return cpu->cartridge.GameData[currentInstruction];
   } else if (currentInstruction <= 0xBFFF) {
     actualInstruction = currentInstruction - 0x2000;
     printf("Tried accessing memory location: %u\n", actualInstruction);
-    return cpu->GameData[actualInstruction];
+    return cpu->cartridge.GameData[actualInstruction];
   } else {
     printf("Tried accessing memory location: %u\n", actualInstruction);
     actualInstruction = currentInstruction - 0x4000;
-    return cpu->GameData[actualInstruction];
+    return cpu->cartridge.GameData[actualInstruction];
   }
   return 0;
 }
@@ -93,14 +93,14 @@ uint8_t readBusMapperZero(CPU *cpu, uint16_t address) {
   if (address >= 0x8000 && address <= 0xBFFF) {
     // Subtract 0xC000 for mapping, and add 0x0010 for header
     uint16_t gameAddress = address - 0xBFF0;
-    return cpu->GameData[gameAddress];
+    return cpu->cartridge.GameData[gameAddress];
   }
 
   if (address >= 0xC000 && address <= 0xFFFF) {
     // printf("Address value: 0x%02x\n", address);
     uint16_t gameAddress = address - 0xBFF0;
     // printf("Game address value: 0x%02x\n", gameAddress);
-    return cpu->GameData[gameAddress];
+    return cpu->cartridge.GameData[gameAddress];
   }
 
   printf("ERROR: Invalid bus address was accessed!\n");

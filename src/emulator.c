@@ -112,8 +112,8 @@ void* lloadGame(CPU *cpu, char fileName[]) {
   fseek(file, 0, SEEK_SET);
 
   printf("Filesize: %ld bytes\n", fileSize);
-  cpu->GameData = malloc(fileSize);
-  fread(cpu->GameData, sizeof(uint8_t), (fileSize), file);
+  cpu->cartridge.GameData = malloc(fileSize);
+  fread(cpu->cartridge.GameData, sizeof(uint8_t), (fileSize), file);
   printf("Read file successfully!\n");
 
   detectGameFormat(cpu);

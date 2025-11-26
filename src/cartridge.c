@@ -5,6 +5,7 @@
 
 int loadGame(Cartridge *cartridge, char *fileName) {
   FILE *file = fopen(fileName, "rb");
+  printf("Looking for file with name: %s\n", fileName);
   if (file == NULL) {
     printf("ERROR: File not found.\n");
     return 1;

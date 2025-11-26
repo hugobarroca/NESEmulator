@@ -3,8 +3,8 @@
 
 #include "SDL_keycode.h"
 #include "emulator.h"
-#include "libs/strings.h"
 #include "utilities.h"
+
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <dirent.h>
@@ -54,8 +54,8 @@ void welcomeScreen() {
         *p = '\0';
       }
       printf("The game you selected was: %s\n", gameName);
-      loadGame(&cpu, gameName);
-      printf("Emulator functionality to be developed.\n");
+      loadGame(&cpu.cartridge, gameName);
+      printf("Emulatorfunctionality to be developed.\n");
       return;
     }
     printf("Command not recognized.\n\n");
@@ -138,8 +138,8 @@ void runMainSDLLoop() {
       }
     }
 
-    //drawCurrInstLabel();
-		// printf("Current pc %u\n", cpu.PC);
+    // drawCurrInstLabel();
+    //  printf("Current pc %u\n", cpu.PC);
     SDL_Delay(16);
   }
 }
@@ -171,8 +171,8 @@ void createUI() {
   TTF_Font *font = TTF_OpenFont(FONT_PATH, 24);
 
   char programCounterLabelText[100];
-  appendIntToString("Program Counter: ", cpu.PC, programCounterLabelText,
-                    sizeof(programCounterLabelText));
+  // appendIntToString("Program Counter: ", cpu.PC, programCounterLabelText,
+  //                   sizeof(programCounterLabelText));
   SDL_Surface *programCounterLabelSurface =
       TTF_RenderUTF8_Solid(font, programCounterLabelText, White);
   if (programCounterLabelSurface == NULL) {
@@ -247,7 +247,7 @@ void createUI() {
       SDL_RenderCopy(renderer, currInstLabelTexture, NULL, &currInstRect);
 
   SDL_RenderPresent(renderer);
-  loadGame(&cpu, "dk.nes");
+  loadGame(&cpu.cartridge, "dk.nes");
 
   runMainSDLLoop();
 
@@ -262,9 +262,9 @@ struct ThreadArgs {
 
 void *loadAndTestGame(void *arg) {
   // struct ThreadArgs *args = (struct ThreadArgs *)arg;
-  char gameName[] = "dk";
+  char gameName[] = "dk.nes";
   // loadGame(args->cpu, gameName);
-  loadGame(&cpu, gameName);
+  loadGame(&cpu.cartridge, gameName);
   return NULL;
 }
 
@@ -274,14 +274,15 @@ void createCPUThread() {
   // args->cpu = &cpu;
   // initializeInstructionArray(&cpu);
   // pthread_create(&cpuThread, NULL, loadAndTestGame, &args);
-	// Running synchronously for now
-	initializeInstructionArray(&cpu);				
-	loadAndTestGame(NULL);
+  // Running synchronously for now
+  //
+  initializeInstructionArray(&cpu);
+  loadAndTestGame(NULL);
 }
 
 void runUIAndCPUThreads() {
-  createCPUThread();
-  createUI();
+   createCPUThread();
+  // createUI();
 }
 
-int main(int argc, char *argv[]) { runUIAndCPUThreads(); }
+int main(void) { runUIAndCPUThreads(); }

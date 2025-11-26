@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -I/usr/include/SDL2 -I/usr/include/SDL2_ttf -D_REENTRANT
 LDFLAGS = -lSDL2 -lSDL2_ttf
-object_files = $(patsubst %.o, $(BUILD_DIR)/%.o, main.o cartridge.o cpu.o emulator.o ram.o stack.o utilities.o)
+object_files = $(patsubst %.o, $(BUILD_DIR)/%.o, main.o cartridge.o cpu.o emulator.o ram.o utilities.o)
 
 BUILD_DIR = ./build
 
